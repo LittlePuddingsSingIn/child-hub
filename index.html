@@ -1,0 +1,1398 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Little Puddings Child Hub</title>
+<style>
+  :root{
+    --green:#1A7A4A; --gold:#D4A017; --grey:#6B6460; --burg:#A13A2A; --rose:#F4DEDA;
+    --cream:#FBF3DC; --pale:#E8F1EC; --line:#E2E0DC; --ink:#2B2A28; --bg:#FAF8F4;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:var(--bg);line-height:1.45}
+  h1,h2,h3,.serif{font-family:Georgia,'Times New Roman',serif}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 20px 80px}
+
+  /* Header */
+  .top{background:var(--green);color:#fff;padding:18px 0;border-bottom:4px solid var(--gold)}
+  .top .wrap{padding-bottom:0;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .top h1{margin:0;font-size:22px;font-weight:700}
+  .top .sub{font-size:13px;color:#DCEDE3}
+
+  /* Toolbar */
+  .bar{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);
+       padding:12px 0;margin-bottom:20px}
+  .bar .wrap{padding-bottom:0;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .spacer{flex:1}
+  .savedtag{font-size:12px;color:var(--grey)}
+
+  button{font-family:inherit;font-size:14px;border-radius:8px;border:1px solid var(--green);
+    background:#fff;color:var(--green);padding:9px 14px;cursor:pointer;transition:.15s}
+  button:hover{background:var(--pale)}
+  button.primary{background:var(--green);color:#fff}
+  button.primary:hover{background:#15643c}
+  button.ghost{border-color:var(--line);color:var(--grey)}
+  button.ghost:hover{background:#f1efea}
+  button.danger{border-color:#D9B3AC;color:var(--burg)}
+  button.danger:hover{background:var(--rose)}
+  button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+  /* Help */
+  .help{background:var(--cream);border-left:4px solid var(--gold);border-radius:6px;
+        padding:14px 18px;margin-bottom:22px;font-size:14px}
+  .help h3{margin:0 0 6px;color:var(--green);font-size:16px}
+  .help p{margin:6px 0}
+  .help b{color:var(--ink)}
+  .syncbanner{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;
+    background:var(--cream);border-left:4px solid var(--gold);border-radius:6px;padding:12px 16px;margin-bottom:18px;font-size:14px}
+  .syncbanner .sbtxt{flex:1;min-width:240px}
+  .syncbanner .sbbtns{display:flex;gap:8px}
+  #dirtytag{font-size:12px;font-weight:700;color:var(--burg)}
+
+  /* Sections */
+  section.group{margin-bottom:30px}
+  .group h2{font-size:18px;color:var(--green);margin:0 0 10px;
+    border-bottom:2px solid var(--gold);padding-bottom:6px;display:flex;align-items:center;gap:10px}
+  .count{font-family:Arial;font-size:12px;color:var(--grey);font-weight:400}
+
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  th,td{text-align:left;padding:10px 12px;font-size:14px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:var(--pale);color:var(--green);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+  tr:last-child td{border-bottom:none}
+  .bandpill{display:inline-block;font-size:11px;font-weight:700;color:#fff;border-radius:20px;padding:2px 9px;white-space:nowrap}
+  .rowact{display:flex;gap:6px}
+  .rowact button{padding:5px 9px;font-size:12px}
+  .empty{padding:24px;text-align:center;color:var(--grey);font-style:italic;background:#fff;border:1px dashed var(--line);border-radius:8px}
+
+  /* Form */
+  .formcard{background:#fff;border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:26px;box-shadow:0 1px 0 rgba(0,0,0,.02)}
+  .formcard h2{margin-top:0}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+  .field{display:flex;flex-direction:column;gap:4px}
+  .field.full{grid-column:1 / -1}
+  label{font-size:12px;font-weight:700;color:var(--grey);text-transform:uppercase;letter-spacing:.03em}
+  input,select,textarea{font-family:inherit;font-size:14px;padding:9px 10px;border:1px solid #CFCDC8;border-radius:7px;background:#fff;color:var(--ink)}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(26,122,74,.12)}
+  textarea{resize:vertical;min-height:46px}
+  .subhead{grid-column:1/-1;font-family:Georgia,serif;color:var(--green);font-size:15px;margin:6px 0 -2px;border-top:1px dashed var(--line);padding-top:12px}
+  .formactions{display:flex;gap:10px;margin-top:18px}
+  .agehint{font-size:12px;color:var(--grey);font-style:italic}
+  .days{grid-column:1/-1;border:1px solid var(--line);border-radius:8px;padding:6px 12px;background:#fff}
+  .dayrow{display:grid;grid-template-columns:1fr 120px 120px;gap:12px;align-items:center;padding:4px 0;border-bottom:1px dashed var(--line)}
+  .dayrow:last-child{border-bottom:none}
+  .dayrow.hdr{font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--grey);font-weight:700}
+  .dayrow label{display:flex;align-items:center;gap:8px;text-transform:none;font-weight:400;font-size:14px;color:var(--ink)}
+  .dayrow input[type=time]{width:100%}
+  .dayrow .off input[type=time]{opacity:.4}
+  .htable td.avok{background:#E8F1EC}
+  .htable td.avfull{background:#FBF3DC}
+  .htable td.avover{background:#F4DEDA;color:#A13A2A;font-weight:700}
+  .checkline{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line);font-size:14px;text-transform:none;font-weight:400}
+  .checkline:last-child{border-bottom:none}
+  .checkline .rate{color:var(--grey);margin-left:auto;white-space:nowrap;padding-left:10px}
+  /* allergy sheet */
+  .atable{width:100%;border-collapse:collapse;margin-top:6px}
+  .atable th{background:var(--rose);color:var(--burg);font-family:Arial;font-size:11px;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:8px 10px;border:1px solid #E4C8C2}
+  .atable td{font-size:13.5px;padding:8px 10px;border:1px solid var(--line);vertical-align:top}
+  .atable td.an{font-weight:700;white-space:nowrap}
+  .atable tr:nth-child(even) td{background:#FCF6F4}
+  .anone{color:var(--grey);font-style:italic}
+  /* record form */
+  .recform{margin:0 auto}
+  .recform + .recform{margin-top:30px;border-top:2px dashed var(--line);padding-top:24px}
+  .rfsec{font-family:Georgia,serif;color:var(--green);font-size:15px;margin:18px 0 8px;border-bottom:1px solid var(--gold);padding-bottom:4px}
+  .rf2{display:grid;grid-template-columns:1fr 1fr;gap:10px 22px}
+  .rff{padding:3px 0}
+  .rfl{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--grey);font-weight:700}
+  .rfv{display:block;min-height:20px;border-bottom:1px solid var(--line);padding:2px 0;font-size:14px}
+  .rfv.empty{border-bottom:1px dotted #BDBBB6}
+  .htable{width:100%;border-collapse:collapse;margin-top:4px}
+  .htable th,.htable td{border:1px solid var(--line);padding:5px 8px;font-size:13px;text-align:left}
+  .htable th{background:var(--pale);color:var(--green);font-size:11px;text-transform:uppercase}
+  .rfsign{margin-top:18px;background:var(--cream);border-left:4px solid var(--gold);padding:12px 14px;font-size:14px}
+  .rfterms{font-size:12.5px;color:var(--ink)}
+  .rfterms li{margin:2px 0}
+
+  /* Preview / generated document */
+  #preview{display:none}
+  .doc{background:#fff;border:1px solid var(--line);border-radius:8px;padding:38px 44px;max-width:860px;margin:0 auto}
+  .doc .brand{font-family:Georgia,serif;color:var(--green);font-weight:700;font-size:15px}
+  .doc h1.title{font-family:Georgia,serif;color:var(--green);font-size:30px;margin:2px 0 2px}
+  .doc .docsub{font-family:Georgia,serif;font-style:italic;color:var(--grey);font-size:14px;
+    border-bottom:3px solid var(--gold);padding-bottom:8px;margin-bottom:6px}
+  .doc .reviewed{font-size:12px;color:var(--grey);margin:0 0 18px}
+  .bandhead{font-family:Georgia,serif;font-weight:700;font-size:18px;color:#fff;
+    padding:5px 12px;border-radius:4px;margin:22px 0 12px}
+  .child{border-left:4px solid var(--line);padding:4px 0 4px 14px;margin:0 0 16px}
+  .nameline{display:flex;justify-content:space-between;align-items:baseline;gap:16px}
+  .cname{font-weight:700;font-size:15px;letter-spacing:.02em}
+  .dob{color:var(--grey);font-size:13px;font-style:italic;white-space:nowrap}
+  .row{display:grid;grid-template-columns:90px 1fr auto;gap:10px;font-size:13.5px;padding:1px 0}
+  .row .lbl{font-weight:700}
+  .row .ph{color:var(--ink);white-space:nowrap}
+  .alert{margin:7px 0 2px;text-align:center;font-weight:700;font-size:13px;color:var(--burg);
+    background:var(--rose);border-radius:4px;padding:5px 8px;letter-spacing:.03em}
+  .staffblock{border-left:4px solid var(--grey);padding:4px 0 4px 14px;margin:0 0 16px}
+  .docfoot{margin-top:26px;border-top:1px solid var(--line);padding-top:8px;font-size:11px;color:var(--grey);
+    display:flex;justify-content:space-between}
+
+  @media(max-width:680px){.grid{grid-template-columns:1fr}.row{grid-template-columns:80px 1fr}.row .ph{grid-column:2;text-align:left}}
+
+  /* Access gate */
+  #gate{position:fixed;inset:0;z-index:100;background:linear-gradient(160deg,#1A7A4A,#155e39);display:none;align-items:center;justify-content:center;padding:20px}
+  .gatecard{background:#fff;border-radius:14px;max-width:720px;width:100%;padding:28px 30px;box-shadow:0 10px 40px rgba(0,0,0,.28)}
+  .gatecard .gatebrand{font-family:Georgia,serif;color:var(--green);font-weight:700}
+  .gatecard h1{font-family:Georgia,serif;color:var(--green);font-size:30px;margin:2px 0 2px}
+  .gatesub{color:var(--grey);font-size:13px;margin:0 0 18px;border-bottom:3px solid var(--gold);padding-bottom:12px}
+  .gaterow{display:flex;gap:18px;flex-wrap:wrap}
+  .gatebox{flex:1;min-width:240px;border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column}
+  .gatebox h3{margin:0 0 6px;color:var(--green);font-size:17px}
+  .gatebox p{font-size:13px;color:var(--grey);margin:0 0 12px;flex:1}
+  .gatebox input{width:100%;margin-bottom:10px;font-size:18px;letter-spacing:.3em;text-align:center}
+  .gatebox button{width:100%}
+  button.big{padding:14px;font-size:16px}
+  .gateerr{color:var(--burg);font-size:13px;font-weight:700;min-height:16px;margin-top:6px}
+
+  /* Print: show only the document */
+  @media print{
+    .no-print{display:none !important}
+    body{background:#fff}
+    #preview{display:block !important}
+    .doc{border:none;border-radius:0;padding:0;max-width:none;margin:0}
+    .wrap{padding:0}
+    .child,.staffblock{break-inside:avoid}
+    .bandhead{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .alert,.bandpill{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+</style>
+</head>
+<body>
+
+<div id="gate" class="no-print">
+  <div class="gatecard" style="max-width:440px">
+    <div class="gatebrand">Little Puddings</div>
+    <h1>Child Hub</h1>
+    <p class="gatesub">Confidential. Enter your PIN to continue.</p>
+    <input id="gatePin" type="password" inputmode="numeric" maxlength="8" placeholder="PIN" autocomplete="off" onkeydown="if(event.key==='Enter')tryUnlock()" style="width:100%;font-size:20px;letter-spacing:.3em;text-align:center;margin-bottom:12px">
+    <button class="primary big" style="width:100%" onclick="tryUnlock()">Enter</button>
+    <div id="gateErr" class="gateerr"></div>
+    <p style="font-size:12px;color:var(--grey);margin-top:14px">The deputy PIN opens the emergency contact details. The manager PIN opens the full hub.</p>
+  </div>
+</div>
+
+<div class="top no-print">
+  <div class="wrap">
+    <h1>Little Puddings</h1>
+    <span class="sub">Child Hub &nbsp;·&nbsp; Central record, holiday planner &amp; availability &nbsp;·&nbsp; Lincoln LN6 0UL</span>
+  </div>
+</div>
+
+<!-- ============ MANAGER VIEW ============ -->
+<div id="manager">
+  <div class="bar no-print">
+    <div class="wrap">
+      <button class="primary" onclick="openForm('child')">+ Add child</button>
+      <button onclick="openForm('staff')">+ Add staff</button>
+      <button class="primary" onclick="generate('emergency')">Generate emergency document</button>
+      <button class="primary" onclick="generate('allergy')">Generate allergy sheet</button>
+      <button class="primary" onclick="generate('record')">Generate record forms</button>
+      <button class="primary" onclick="generate('trip')">Generate trip register</button>
+      <button class="ghost" onclick="openAvailability()">Availability</button>
+      <button class="ghost" onclick="openHolidayPlanner()">Holiday planner</button>
+      <button class="ghost" onclick="openReviews()">Reviews</button>
+      <button class="ghost" onclick="openSettings()">Fees &amp; terms</button>
+      <button class="ghost" onclick="openOneDrive()">OneDrive</button>
+      <span class="spacer"></span>
+      <button class="ghost" onclick="exportSpreadsheet()">Export for spreadsheet</button>
+      <button class="ghost" onclick="saveFile()">Save data file</button>
+      <button class="ghost" onclick="document.getElementById('loadInput').click()">Load data file</button>
+      <input id="loadInput" type="file" accept=".json,application/json" style="display:none" onchange="loadFile(event)">
+      <button class="ghost" onclick="openPins()">PINs</button>
+      <button class="ghost" onclick="lockApp()">Lock</button>
+      <span class="savedtag" id="savedtag"></span>
+      <span id="dirtytag"></span>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div id="syncBanner" class="syncbanner no-print">
+      <div class="sbtxt"><b>Working across your laptops?</b> Load your latest data file from OneDrive before you start, then Save it back when you finish, so both machines stay in step.</div>
+      <div class="sbbtns">
+        <button class="primary" onclick="document.getElementById('loadInput').click()">Load data file</button>
+        <button class="ghost" onclick="dismissBanner()">Got it</button>
+      </div>
+    </div>
+    <div class="help no-print">
+      <h3>How this works</h3>
+      <p>Enter each child and staff member once. For attendance, tick the days and set a from and to time; the document writes it up for you (for example, <b>Tuesday – Friday 7.45–15.45</b>). Then generate the <b>emergency document</b>, the <b>allergy sheet</b>, or a populated <b>record form</b> per child to send home for parents to check. Each one can be <b>printed</b>, <b>saved as PDF</b>, or <b>downloaded as Word</b>. Set your rates once under <b>Fees &amp; terms</b> and they print on every record form; use <b>Form</b> next to a child to make just theirs.</p>
+      <p>Everything stays on this device. Use <b>Save data file</b> to keep a backup; <b>Load data file</b> brings it back or moves it to another computer.</p>
+    </div>
+
+    <!-- entry form mounts here -->
+    <div id="formMount"></div>
+
+    <section class="group">
+      <h2>Children <span class="count" id="childCount"></span></h2>
+      <div id="childList"></div>
+    </section>
+
+    <section class="group">
+      <h2>Staff <span class="count" id="staffCount"></span></h2>
+      <div id="staffList"></div>
+    </section>
+  </div>
+</div>
+
+<!-- ============ PREVIEW VIEW ============ -->
+<div id="preview">
+  <div class="bar no-print">
+    <div class="wrap">
+      <button class="ghost" id="previewBackBtn" onclick="previewBack()">‹ Back to data</button>
+      <span class="spacer"></span>
+      <span id="previewMgrCtrls" style="display:flex;align-items:center;gap:10px">
+      <label style="text-transform:none;font-weight:400;color:var(--grey);display:flex;align-items:center;gap:6px">
+        Reviewed:&nbsp;<input id="reviewedInput" type="date" onchange="renderDoc()" style="padding:6px 8px">
+      </label>
+      <button onclick="downloadWord()">Download as Word</button>
+      </span>
+      <button class="primary" onclick="window.print()">Print / Save as PDF</button>
+    </div>
+  </div>
+  <div class="wrap">
+    <div id="document" class="doc"></div>
+  </div>
+</div>
+
+<script>
+/* ---------- band configuration (edit colours here if you like) ---------- */
+const BANDS = [
+  { name:'Under 1s', color:'#C0392B' },
+  { name:'Under 5s', color:'#1A7A4A' },
+  { name:'Under 8s', color:'#D17A22' },
+  { name:'Over 8s',  color:'#2E6DA4' },
+];
+const bandColor = n => (BANDS.find(b=>b.name===n)||{}).color || '#6B6460';
+
+/* ---------- state ---------- */
+let data = { children:[], staff:[], settings:{} };
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+/* ---------- date / age helpers ---------- */
+function ageYears(dob,asOf){ if(!dob) return null;
+  const d=new Date(dob), t=asOf?new Date(asOf):new Date(); let a=t.getFullYear()-d.getFullYear();
+  const m=t.getMonth()-d.getMonth();
+  if(m<0||(m===0&&t.getDate()<d.getDate())) a--; return a; }
+function bandOf(c,asOf){
+  const dob = (c && typeof c==='object') ? c.dob : c;
+  const atSchool = (c && typeof c==='object') ? (c.atSchool || !!c.school) : false;
+  const a=ageYears(dob,asOf); if(a===null) return 'Under 5s';
+  if(a<1) return 'Under 1s';
+  if(atSchool || a>=5) return a<8 ? 'Under 8s' : 'Over 8s';
+  return 'Under 5s';
+}
+function fmtDate(iso){ if(!iso) return ''; const d=new Date(iso);
+  const p=n=>String(n).padStart(2,'0'); return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear(); }
+function ageLabel(dob){ const a=ageYears(dob); if(a===null) return '';
+  const d=new Date(dob), t=new Date(); let m=(t.getFullYear()-d.getFullYear())*12+(t.getMonth()-d.getMonth());
+  if(t.getDate()<d.getDate()) m--; return a<2 ? (m+' months') : (a+' years'); }
+
+/* ---------- attendance ---------- */
+const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+function dayRow(day, rec){
+  rec=rec||{}; const on=!!rec.day; const ab=day.slice(0,3);
+  return '<div class="dayrow'+(on?'':' off')+'">'+
+    '<label><input type="checkbox" id="f_on_'+ab+'" '+(on?'checked':'')+' onchange="this.closest(\'.dayrow\').classList.toggle(\'off\',!this.checked)"> '+day+'</label>'+
+    '<input type="time" id="f_from_'+ab+'" value="'+esc(rec.from||'')+'">'+
+    '<input type="time" id="f_to_'+ab+'" value="'+esc(rec.to||'')+'"></div>';
+}
+function fmtTime(t){ if(!t) return ''; const p=t.split(':'); return parseInt(p[0],10)+'.'+(p[1]||'00'); }
+function attendsText(att){
+  if(!att||!att.length) return '';
+  const items=att.slice().sort((a,b)=>DAYS.indexOf(a.day)-DAYS.indexOf(b.day));
+  const groups=[];
+  items.forEach(it=>{ const last=groups[groups.length-1];
+    if(last && last.from===it.from && last.to===it.to && DAYS.indexOf(it.day)===DAYS.indexOf(last.days[last.days.length-1])+1) last.days.push(it.day);
+    else groups.push({days:[it.day],from:it.from,to:it.to}); });
+  return groups.map(g=>{
+    const label = g.days.length>1 ? (g.days[0]+' – '+g.days[g.days.length-1]) : g.days[0];
+    const time = (g.from||g.to) ? (' '+fmtTime(g.from)+(g.to?'–'+fmtTime(g.to):'')) : '';
+    return label+time; }).join(', ');
+}
+function attendsOf(c){ const t=attendsText(c.attendance); return t || c.attends || ''; }
+function hasAllergyInfo(c){ return !!(c.allergies||c.dietary||c.alert); }
+function allergyBanner(c){ return [c.allergies, c.alert].filter(Boolean).join(' · '); }
+
+/* ---------- persistence ---------- */
+const LS='lp_emergency_db_v1';
+function persist(){ try{ localStorage.setItem(LS, JSON.stringify(data));
+  flag('Saved to this device'); }catch(e){ flag('Autosave unavailable, use Save data file'); } }
+function flag(t){ const el=document.getElementById('savedtag'); el.textContent=t;
+  clearTimeout(flag._t); flag._t=setTimeout(()=>el.textContent='',2500); }
+let fileDirty=false;
+function markDirty(){ fileDirty=true; updateDirty(); }
+function updateDirty(){ const el=document.getElementById('dirtytag'); if(!el) return;
+  el.textContent = fileDirty ? '\u25CF Unsaved changes. Save data file to OneDrive' : ''; }
+function dismissBanner(){ const b=document.getElementById('syncBanner'); if(b) b.style.display='none'; }
+window.addEventListener('beforeunload', function(e){ if(fileDirty){ e.preventDefault(); e.returnValue=''; } });
+function loadLS(){ try{ const r=localStorage.getItem(LS); if(r) data=JSON.parse(r); }catch(e){} }
+
+function saveFile(){
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='little-puddings-emergency-data.json'; a.click(); URL.revokeObjectURL(a.href);
+  fileDirty=false; updateDirty(); flag('Data file saved');
+}
+function csvCell(v){ v=(v==null?'':String(v)); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; }
+function exportSpreadsheet(){
+  const dayKeys=['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  const header=['Child name','Date of birth','Age band (if no DOB)','Status','Start date','Leave date','School-age from','Mon','Tue','Wed','Thu','Fri'];
+  const lines=[header.map(csvCell).join(',')];
+  (data.children||[]).forEach(function(c){
+    var name=fullName(c); if(!name) return;
+    var future = c.start && (new Date(c.start) > new Date());
+    var schoolFrom = (c.atSchool || c.school) ? (c.start || todayISO()) : '';
+    var row=[ name, c.dob||'', '', future?'New joiner':'Current', c.start||'', c.leave||'', schoolFrom ];
+    dayKeys.forEach(function(d){ row.push(attendsDay(c,d)?'Full day':''); });
+    lines.push(row.map(csvCell).join(','));
+  });
+  const blob=new Blob([lines.join('\r\n')],{type:'text/csv'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='little-puddings-children-for-spreadsheet.csv'; a.click(); URL.revokeObjectURL(a.href);
+  flag('Spreadsheet export saved');
+}
+function loadFile(ev){
+  const f=ev.target.files[0]; if(!f) return; const r=new FileReader();
+  r.onload=()=>{ try{ const d=JSON.parse(r.result);
+      data={children:d.children||[], staff:d.staff||[], settings:d.settings||{}, holiday:d.holiday||defaultHoliday()}; ensureModel(); persist(); renderLists();
+      fileDirty=false; updateDirty(); dismissBanner();
+      flag('Data loaded'); }catch(e){ alert('That file could not be read. Please choose a data file saved from this tool.'); } };
+  r.readAsText(f); ev.target.value='';
+}
+
+/* ---------- list rendering ---------- */
+function renderLists(){
+  const ch=data.children.slice().sort((a,b)=> new Date(b.dob||0)-new Date(a.dob||0));
+  const cc=document.getElementById('childList');
+  document.getElementById('childCount').textContent = data.children.length ? '('+data.children.length+')' : '';
+  if(!ch.length){ cc.innerHTML='<div class="empty">No children yet. Use “Add child” to start your list.</div>'; }
+  else{
+    cc.innerHTML='<table><thead><tr><th>Name</th><th>Age band</th><th>DOB</th><th>Attends</th><th></th></tr></thead><tbody>'+
+      ch.map(c=>{ const b=bandOf(c);
+        return '<tr><td><b>'+esc(fullName(c))+'</b>'+(hasAllergyInfo(c)?' <span title="allergy or dietary noted" style="color:var(--burg)">⚠</span>':'')+(reviewOverdue(c)?' <span title="parent review overdue" style="color:var(--burg)">◷</span>':'')+'</td>'+
+          '<td><span class="bandpill" style="background:'+bandColor(b)+'">'+b+'</span></td>'+
+          '<td>'+esc(fmtDate(c.dob))+'</td>'+
+          '<td>'+esc(attendsOf(c))+'</td>'+
+          '<td><div class="rowact"><button class="ghost" onclick="generate(\'record\',\''+c.id+'\')">Form</button><button class="ghost" onclick="editPerson(\''+c.id+'\',\'child\')">Edit</button>'+
+          '<button class="danger" onclick="del(\''+c.id+'\',\'child\')">Delete</button></div></td></tr>'; }).join('')+
+      '</tbody></table>';
+  }
+  const st=data.staff;
+  const sc=document.getElementById('staffList');
+  document.getElementById('staffCount').textContent = st.length ? '('+st.length+')' : '';
+  if(!st.length){ sc.innerHTML='<div class="empty">No staff yet. Use “Add staff” to add yourself and your team.</div>'; }
+  else{
+    sc.innerHTML='<table><thead><tr><th>Name</th><th>Role</th><th>Next of kin</th><th></th></tr></thead><tbody>'+
+      st.map(s=> '<tr><td><b>'+esc(s.name||'')+'</b></td><td>'+esc(s.role||'')+'</td>'+
+        '<td>'+esc([s.nok,s.nokphone].filter(Boolean).join(' · '))+'</td>'+
+        '<td><div class="rowact"><button class="ghost" onclick="editPerson(\''+s.id+'\',\'staff\')">Edit</button>'+
+        '<button class="danger" onclick="del(\''+s.id+'\',\'staff\')">Delete</button></div></td></tr>').join('')+
+      '</tbody></table>';
+  }
+}
+function fullName(c){ return [c.first,c.surname].filter(Boolean).join(' ') || c.first || c.surname || '(unnamed)'; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+
+/* ---------- entry form ---------- */
+function openForm(type, person){
+  const editing=!!person; person=person||{};
+  const m=document.getElementById('formMount');
+  if(type==='child'){
+    m.innerHTML = childForm(person, editing);
+    const dobEl=document.getElementById('f_dob');
+    dobEl.addEventListener('input',updateAgeHint); updateAgeHint();
+  } else {
+    m.innerHTML = staffForm(person, editing);
+  }
+  m.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function updateAgeHint(){
+  const dob=document.getElementById('f_dob').value;
+  const h=document.getElementById('ageHint');
+  if(h) h.textContent = dob ? (ageLabel(dob)+' · '+bandOf(dob)) : '';
+}
+function fld(id,label,val,type='text',ph=''){
+  return '<div class="field"><label for="'+id+'">'+label+'</label>'+
+    '<input id="'+id+'" type="'+type+'" value="'+esc(val||'')+'" placeholder="'+esc(ph)+'"></div>';
+}
+function childForm(c,editing){
+  return '<div class="formcard"><h2>'+(editing?'Edit child':'Add child')+'</h2>'+
+   '<input type="hidden" id="f_id" value="'+esc(c.id||'')+'">'+
+   '<div class="grid">'+
+     fld('f_first','First name',c.first)+
+     fld('f_surname','Surname',c.surname)+
+     fld('f_preferred','Known as (optional)',c.preferred)+
+     '<div class="field"><label for="f_dob">Date of birth</label><input id="f_dob" type="date" value="'+esc(c.dob||'')+'"><span class="agehint" id="ageHint"></span></div>'+
+     '<div class="field"><label for="f_sex">Sex</label><select id="f_sex"><option value="">Not recorded</option><option value="Male"'+(c.sex==='Male'?' selected':'')+'>Male</option><option value="Female"'+(c.sex==='Female'?' selected':'')+'>Female</option></select></div>'+
+     '<div class="field full"><label for="f_address">Home address</label><textarea id="f_address" placeholder="House, street, town, postcode">'+esc(c.address||'')+'</textarea></div>'+
+     fld('f_homephone','Home telephone',c.homephone,'tel')+
+     '<div class="field"></div>'+
+     '<div class="subhead">First parent or carer</div>'+
+     fld('f_c1label','Label',c.c1label||'Mum','text','Mum')+
+     fld('f_c1name','Name',c.c1name)+
+     fld('f_c1mobile','Mobile',c.c1mobile,'tel')+
+     '<div class="field"></div>'+
+     fld('f_c1work','Workplace',c.c1work)+
+     fld('f_c1workphone','Work phone',c.c1workphone,'tel')+
+     fld('f_c1email','Email',c.c1email,'email')+
+     '<div class="field"></div>'+
+     '<div class="subhead">Second parent or carer (optional)</div>'+
+     fld('f_c2label','Label',c.c2label||'Dad','text','Dad')+
+     fld('f_c2name','Name',c.c2name)+
+     fld('f_c2mobile','Mobile',c.c2mobile,'tel')+
+     '<div class="field"></div>'+
+     fld('f_c2work','Workplace',c.c2work)+
+     fld('f_c2workphone','Work phone',c.c2workphone,'tel')+
+     fld('f_c2email','Email',c.c2email,'email')+
+     '<div class="field"></div>'+
+     '<div class="subhead">Doctor\'s details</div>'+
+     fld('f_doctorname','Doctor / surgery',c.doctorname)+
+     fld('f_doctorphone','Doctor telephone',c.doctorphone,'tel')+
+     '<div class="subhead">Emergency contacts (other than parent or carer)</div>'+
+     fld('f_ec1name','Contact name',c.ec1name)+
+     fld('f_ec1phone','Contact number',c.ec1phone,'tel')+
+     fld('f_ec2name','Contact name',c.ec2name)+
+     fld('f_ec2phone','Contact number',c.ec2phone,'tel')+
+     '<div class="subhead">Attendance</div>'+
+     '<div class="days"><div class="dayrow hdr"><span>Day</span><span>From</span><span>To</span></div>'+
+       DAYS.map(d=>dayRow(d, (c.attendance||[]).find(a=>a.day===d))).join('')+'</div>'+
+     '<div class="subhead">School</div>'+
+     '<div class="field full"><label style="display:flex;align-items:center;gap:8px;text-transform:none;font-weight:400;color:var(--ink)"><input type="checkbox" id="f_atschool" '+(c.atSchool?'checked':'')+'> At school (places the child in the Under 8s or Over 8s band, even if under 5)</label></div>'+
+     fld('f_school','School (name and hours)',c.school)+
+     fld('f_schoolphone','School phone',c.schoolphone,'tel')+
+     '<div class="subhead">Place dates (optional, used for availability)</div>'+
+     fld('f_start','Start date',c.start,'date')+
+     fld('f_leave','Leave date',c.leave,'date')+
+     '<div class="subhead">Parent review</div>'+
+     fld('f_lastconfirmed','Details last confirmed by parent',c.lastConfirmed,'date')+
+     '<div class="field"><span class="agehint">Set this when a parent returns their updated form; the Reviews panel flags anyone overdue.</span></div>'+
+     '<div class="subhead">Funding and fees</div>'+
+     '<div class="field full"><label for="f_funding">Funding entitlement</label><input id="f_funding" list="fundingopts" value="'+esc(c.funding||'')+'" placeholder="e.g. Extended 30 hours (working parents)"><datalist id="fundingopts"><option value="None / private"></option><option value="2-year-old funding (15 hours)"></option><option value="Universal 15 hours (3 to 4 year olds)"></option><option value="Extended 30 hours (working parents)"></option><option value="Working parent entitlement (9 months to 2 years)"></option></datalist></div>'+
+     '<div class="field full"><label>Fees that apply (tick all that apply)</label>'+
+       '<div class="days">'+FEE_ROWS.filter(r=>!r.standard).map(r=>{ var on=(c.fees||[]).indexOf(r.key)>=0;
+         return '<label class="checkline"><input type="checkbox" id="f_fee_'+r.key+'" '+(on?'checked':'')+'><span>'+esc(r.label)+'</span><span class="rate">'+esc(feeRate(r.key))+'</span></label>'; }).join('')+'</div>'+
+       '<span class="agehint">Late payment and late collection / early drop-off charges print on every form as standard.</span></div>'+
+     '<div class="subhead">Allergies, dietary and medical</div>'+
+     '<div class="field full"><label for="f_allergies">Allergies</label><input id="f_allergies" value="'+esc(c.allergies||'')+'" placeholder="e.g. Peanuts, egg"></div>'+
+     '<div class="field full"><label for="f_dietary">Dietary requirements</label><input id="f_dietary" value="'+esc(c.dietary||'')+'" placeholder="e.g. Vegetarian, no pork"></div>'+
+     '<div class="field full"><label for="f_alert">Other medical alert (optional)</label><input id="f_alert" value="'+esc(c.alert||'')+'" placeholder="e.g. Asthma, inhaler on site"></div>'+
+   '</div>'+
+   '<div class="formactions"><button class="primary" onclick="saveChild()">'+(editing?'Save changes':'Add child')+'</button>'+
+     '<button class="ghost" onclick="closeForm()">Cancel</button></div></div>';
+}
+function staffForm(s,editing){
+  return '<div class="formcard"><h2>'+(editing?'Edit staff member':'Add staff member')+'</h2>'+
+   '<input type="hidden" id="f_id" value="'+esc(s.id||'')+'">'+
+   '<div class="grid">'+
+     fld('f_name','Name',s.name)+
+     fld('f_role','Role',s.role,'text','e.g. Childminder, Apprentice')+
+     '<div class="subhead">Next of kin</div>'+
+     fld('f_nok','Name',s.nok)+
+     fld('f_nokrel','Relationship',s.nokrel)+
+     fld('f_nokphone','Phone',s.nokphone,'tel')+
+     '<div class="field"></div>'+
+     '<div class="field full"><label for="f_medication">Current medication (optional)</label><input id="f_medication" value="'+esc(s.medication||'')+'"></div>'+
+     '<div class="field full"><label for="f_emergency">Emergency contacts</label><textarea id="f_emergency" placeholder="Name and phone, one per line">'+esc(s.emergency||'')+'</textarea></div>'+
+     '<div class="field full"><label for="f_children">Their own children (optional)</label><textarea id="f_children" placeholder="Names, schools, year groups">'+esc(s.childrenNote||'')+'</textarea></div>'+
+   '</div>'+
+   '<div class="formactions"><button class="primary" onclick="saveStaff()">'+(editing?'Save changes':'Add staff member')+'</button>'+
+     '<button class="ghost" onclick="closeForm()">Cancel</button></div></div>';
+}
+function v(id){ const e=document.getElementById(id); return e?e.value.trim():''; }
+function saveChild(){
+  const rec={ id:v('f_id')||uid(), type:'child',
+    first:v('f_first'), surname:v('f_surname'), preferred:v('f_preferred'), dob:v('f_dob'),
+    sex:v('f_sex'), address:v('f_address'), homephone:v('f_homephone'),
+    doctorname:v('f_doctorname'), doctorphone:v('f_doctorphone'),
+    ec1name:v('f_ec1name'), ec1phone:v('f_ec1phone'), ec2name:v('f_ec2name'), ec2phone:v('f_ec2phone'),
+    c1label:v('f_c1label'), c1name:v('f_c1name'), c1mobile:v('f_c1mobile'), c1work:v('f_c1work'), c1workphone:v('f_c1workphone'), c1email:v('f_c1email'),
+    c2label:v('f_c2label'), c2name:v('f_c2name'), c2mobile:v('f_c2mobile'), c2work:v('f_c2work'), c2workphone:v('f_c2workphone'), c2email:v('f_c2email'),
+    attendance: DAYS.filter(d=>{const e=document.getElementById('f_on_'+d.slice(0,3));return e&&e.checked;})
+        .map(d=>({day:d, from:v('f_from_'+d.slice(0,3)), to:v('f_to_'+d.slice(0,3))})),
+    atSchool:(document.getElementById('f_atschool')||{}).checked||false,
+    school:v('f_school'), schoolphone:v('f_schoolphone'), start:v('f_start'), leave:v('f_leave'), funding:v('f_funding'),
+    fees: FEE_ROWS.filter(r=>!r.standard && (document.getElementById('f_fee_'+r.key)||{}).checked).map(r=>r.key),
+    allergies:v('f_allergies'), dietary:v('f_dietary'), alert:v('f_alert') };
+  if(!rec.first && !rec.surname){ alert('Please enter at least a first name or surname.'); return; }
+  var _prev=(data.children||[]).find(function(x){return x.id===rec.id;});
+  rec.lastConfirmed = v('f_lastconfirmed') || (_prev&&_prev.lastConfirmed) || '';
+  rec.log = (_prev&&_prev.log)?_prev.log.slice():[];
+  rec.log.push({date:todayISO(), note:_prev?'Record updated':'Record created'});
+  if(rec.log.length>20) rec.log=rec.log.slice(-20);
+  upsert('children',rec); closeForm();
+}
+function saveStaff(){
+  const rec={ id:v('f_id')||uid(), type:'staff',
+    name:v('f_name'), role:v('f_role'), nok:v('f_nok'), nokrel:v('f_nokrel'), nokphone:v('f_nokphone'),
+    medication:v('f_medication'), emergency:v('f_emergency'), childrenNote:v('f_children') };
+  if(!rec.name){ alert('Please enter a name.'); return; }
+  upsert('staff',rec); closeForm();
+}
+function upsert(key,rec){ const i=data[key].findIndex(x=>x.id===rec.id);
+  if(i>=0) data[key][i]=rec; else data[key].push(rec); persist(); markDirty(); renderLists(); }
+function editPerson(id,type){ const key=type==='child'?'children':'staff';
+  const p=data[key].find(x=>x.id===id); if(p) openForm(type,p); }
+function del(id,type){ const key=type==='child'?'children':'staff';
+  const p=data[key].find(x=>x.id===id); const nm = type==='child'? fullName(p) : (p&&p.name);
+  if(confirm('Remove '+nm+' from the list?')){ data[key]=data[key].filter(x=>x.id!==id); persist(); markDirty(); renderLists(); } }
+function closeForm(){ document.getElementById('formMount').innerHTML=''; }
+
+/* ---------- fees & terms settings ---------- */
+const FEE_ROWS = [
+  {key:'fullDay',  label:'Full day (Under 5s, 6 hours or more)',     def:'\u00a360.00 per day'},
+  {key:'halfDay',  label:'Half day (Under 5s, 6 hours or less)',     def:'\u00a340.00 per session'},
+  {key:'wrapU2',   label:'Wrap-around, 9 months to under 2s',        def:'\u00a36.25 per hour'},
+  {key:'wrap2',    label:'Wrap-around, 2-year-olds',                 def:'\u00a36.75 per hour'},
+  {key:'wrap34',   label:'Wrap-around, 3 & 4-year-olds',             def:'\u00a37.50 per hour'},
+  {key:'schoolAge',label:'School-age children (term time)',          def:'\u00a36.00 per hour'},
+  {key:'adhoc',    label:'Ad hoc holiday care',                      def:'\u00a36.25 per hour, minimum 6 hours per day. 50% non-refundable deposit at booking.'},
+  {key:'retainer', label:'Retainer (all-year-round contracts only)', def:'Half contracted rate, up to 10 days pro rata per year. Minimum 7 days notice. Not for term-time-only contracts.'},
+  {key:'latePay',  label:'Late payment',                            def:'\u00a35.00 for each day a payment is received late.', standard:true},
+  {key:'lateCol',  label:'Late collection / early drop-off',        def:'\u00a35.00 per 15 minutes before or after contracted time.', standard:true},
+];
+function feeRows(){ const s=data.settings||{};
+  return FEE_ROWS.map(r=>({label:r.label, rate:(s[r.key]!=null && s[r.key]!=='')?s[r.key]:r.def})); }
+function feeRate(key){ const s=data.settings||{}; const r=FEE_ROWS.find(x=>x.key===key); if(!r) return '';
+  return (s[key]!=null && s[key]!=='')?s[key]:r.def; }
+function recordFeeTableRows(c){
+  const rows=[];
+  (c.fees||[]).forEach(k=>{ const r=FEE_ROWS.find(x=>x.key===k); if(r && !r.standard) rows.push({label:r.label, rate:feeRate(k)}); });
+  FEE_ROWS.filter(r=>r.standard).forEach(r=>rows.push({label:r.label, rate:feeRate(r.key)}));
+  return rows;
+}
+function settingsForm(s){ s=s||{};
+  return '<div class="formcard"><h2>Fees &amp; terms</h2>'+
+   '<p style="color:var(--grey);font-size:13px;margin-top:0">These print as a fee schedule on every record form. They are pre-filled with your current rates; edit any to update them.</p>'+
+   '<div class="grid">'+
+     FEE_ROWS.map(r=>'<div class="field full"><label for="s_'+r.key+'">'+esc(r.label)+'</label><input id="s_'+r.key+'" value="'+esc(s[r.key]!=null?s[r.key]:r.def)+'"></div>').join('')+
+   '</div>'+
+   '<div class="formactions"><button class="primary" onclick="saveSettings()">Save</button>'+
+     '<button class="ghost" onclick="closeForm()">Cancel</button></div></div>';
+}
+function openSettings(){ const m=document.getElementById('formMount'); m.innerHTML=settingsForm(data.settings||{}); m.scrollIntoView({behavior:'smooth',block:'start'}); }
+function attendsDay(c,day){ return (c.attendance||[]).some(a=>a.day===day); }
+function onRoll(c,asOf){ var t=asOf?new Date(asOf):new Date();
+  if(c.start){ if(new Date(c.start)>t) return false; }
+  if(c.leave){ if(new Date(c.leave)<t) return false; }
+  return true; }
+function availabilityData(asOf){
+  const days=['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  const res={}; days.forEach(d=>res[d]={u1:0,u5:0,s57:0,a8:0});
+  (data.children||[]).forEach(function(c){ if(!onRoll(c,asOf)) return; const b=bandOf(c,asOf); days.forEach(function(d){ if(attendsDay(c,d)){
+    if(b==='Under 1s'){res[d].u1++;res[d].u5++;}
+    else if(b==='Under 5s'){res[d].u5++;}
+    else if(b==='Under 8s'){res[d].s57++;}
+    else if(b==='Over 8s'){res[d].a8++;}
+  }});});
+  return {days:days,res:res};
+}
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function addMonthsISO(iso,n){ var d=iso?new Date(iso):new Date(); d.setMonth(d.getMonth()+n); return d.toISOString().slice(0,10); }
+function monthLabel(iso){ var d=new Date(iso); return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getFullYear(); }
+function groupBand(c,asOf){ var a=ageYears(c.dob,asOf); var school=(c.atSchool||!!c.school);
+  if(a===null) return 'threeEY';
+  if(a<2) return 'under2'; if(a<3) return 'two';
+  if(school) return a<8?'school':'8plus';
+  if(a<5) return 'threeEY'; if(a<8) return 'school'; return '8plus'; }
+function groupData(asOf){
+  const days=['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  const res={}; days.forEach(d=>res[d]={under2:0,two:0,threeEY:0,school:0});
+  (data.children||[]).forEach(function(c){ if(!onRoll(c,asOf)) return; var b=groupBand(c,asOf); days.forEach(function(d){ if(attendsDay(c,d) && res[d][b]!==undefined) res[d][b]++; }); });
+  return {days:days,res:res};
+}
+
+var AV={tab:'now', date:null, adults:1, staff:1};
+var HOL={childId:null, view:'enter'};
+function openAvailability(){ if(!AV.date) AV.date=todayISO(); renderAvail(); }
+function avTabBtn(name,label){ return '<button class="'+(AV.tab===name?'primary':'ghost')+'" onclick="AV.tab=\''+name+'\';renderAvail()">'+label+'</button>'; }
+function renderAvail(){
+  const m=document.getElementById('formMount');
+  var body = AV.tab==='forecast'?avForecast() : AV.tab==='codp'?avCodp() : AV.tab==='enq'?avEnq() : avNow();
+  m.innerHTML='<div class="formcard"><h2>Availability and planning</h2>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">'+
+      avTabBtn('now','Now / date check')+avTabBtn('forecast','Forecast')+avTabBtn('codp','Group ratio (CODP)')+avTabBtn('enq','Enquiry')+'</div>'+
+    body+
+    '<div class="formactions" style="margin-top:14px"><button class="primary" onclick="exportSpreadsheet()">Export for spreadsheet</button><button class="ghost" onclick="closeForm()">Close</button></div></div>';
+  m.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function avCellClass(val,limit){ return val>limit?'avover':(val===limit&&val>0?'avfull':'avok'); }
+function avNow(){
+  var adults=AV.adults, asOf=AV.date;
+  var d=availabilityData(asOf), days=d.days, res=d.res;
+  var lim1=adults, lim5=3*adults, lim8=6*adults;
+  function cell(v,l){ return '<td class="'+avCellClass(v,l)+'">'+v+'</td>'; }
+  function plain(v){ return '<td>'+v+'</td>'; }
+  var rows='';
+  rows+='<tr><td>Under 1 (max '+lim1+')</td>'+days.map(x=>cell(res[x].u1,lim1)).join('')+plain(lim1)+'</tr>';
+  rows+='<tr><td>Under 5s, early years (max '+lim5+')</td>'+days.map(x=>cell(res[x].u5,lim5)).join('')+plain(lim5)+'</tr>';
+  rows+='<tr><td>School age (5 to 7)</td>'+days.map(x=>plain(res[x].s57)).join('')+plain('')+'</tr>';
+  rows+='<tr><td>Aged 8+</td>'+days.map(x=>plain(res[x].a8)).join('')+plain('')+'</tr>';
+  rows+='<tr><td><strong>Total under 8 (max '+lim8+')</strong></td>'+days.map(x=>cell(res[x].u5+res[x].s57,lim8)).join('')+plain(lim8)+'</tr>';
+  rows+='<tr><td>Spare early-years (under 5)</td>'+days.map(x=>plain(Math.max(0,lim5-res[x].u5))).join('')+plain('')+'</tr>';
+  rows+='<tr><td>Spare under 8</td>'+days.map(x=>plain(Math.max(0,lim8-(res[x].u5+res[x].s57)))).join('')+plain('')+'</tr>';
+  return '<p style="color:var(--grey);font-size:13px;margin-top:0">Counts use each child\u2019s age on the date chosen, only if their start date has passed and they have not left. Green has room, cream is full, rose is over.</p>'+
+    '<div style="display:flex;gap:16px;flex-wrap:wrap">'+
+      '<div class="field" style="max-width:200px"><label for="av_date">Date to check</label><input id="av_date" type="date" value="'+esc(asOf)+'" onchange="AV.date=this.value;renderAvail()"></div>'+
+      '<div class="field" style="max-width:200px"><label for="av_adults">Adults in ratio</label><input id="av_adults" type="number" min="1" max="6" value="'+adults+'" onchange="AV.adults=parseInt(this.value)||1;renderAvail()"></div>'+
+    '</div>'+
+    '<table class="htable" style="margin-top:10px"><tr><th>Age group</th>'+days.map(x=>'<th>'+x.slice(0,3)+'</th>').join('')+'<th>Limit</th></tr>'+rows+'</table>'+
+    '<p style="color:var(--grey);font-size:12px;margin-top:8px">Limits are '+adults+' adult(s) \u00d7 6 under 8, 3 under 5, 1 under 1. School-age children count toward under 8 but not the under-5 limit.</p>';
+}
+function avForecast(){
+  var adults=AV.adults, lim5=3*adults, lim8=6*adults;
+  var days=['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  function tbl(metric,limit,title){
+    var rows='';
+    for(var i=0;i<12;i++){ var iso=addMonthsISO(AV.date,i); var d=availabilityData(iso).res;
+      rows+='<tr><td>'+monthLabel(iso)+'</td>'+days.map(function(x){ var v=metric==='u5'?d[x].u5:(d[x].u5+d[x].s57); return '<td class="'+avCellClass(v,limit)+'">'+v+'</td>'; }).join('')+'<td>'+limit+'</td></tr>';
+    }
+    return '<p style="font-weight:600;color:var(--green);margin:14px 0 4px">'+title+'</p>'+
+      '<table class="htable"><tr><th>Month</th>'+days.map(x=>'<th>'+x.slice(0,3)+'</th>').join('')+'<th>Max</th></tr>'+rows+'</table>';
+  }
+  return '<p style="color:var(--grey);font-size:13px;margin-top:0">Twelve months ahead from the start date, projecting each child\u2019s age forward and respecting start and leave dates. Green has room, cream is full, rose is over.</p>'+
+    '<div style="display:flex;gap:16px;flex-wrap:wrap">'+
+      '<div class="field" style="max-width:200px"><label for="av_date2">Forecast starts</label><input id="av_date2" type="date" value="'+esc(AV.date)+'" onchange="AV.date=this.value;renderAvail()"></div>'+
+      '<div class="field" style="max-width:200px"><label for="av_adults2">Adults in ratio</label><input id="av_adults2" type="number" min="1" max="6" value="'+adults+'" onchange="AV.adults=parseInt(this.value)||1;renderAvail()"></div>'+
+    '</div>'+
+    tbl('u5',lim5,'Under 5s, early years (max '+lim5+')')+
+    tbl('u8',lim8,'Total under 8 (max '+lim8+')');
+}
+function avCodp(){
+  var staff=AV.staff||1, asOf=AV.date;
+  var d=groupData(asOf), days=d.days, res=d.res;
+  var ratios={under2:3,two:5,threeEY:8,school:8};
+  function row(key,label){ var cap=ratios[key]*staff;
+    return '<tr><td>'+label+' (max '+cap+')</td>'+days.map(function(x){ var v=res[x][key]; return '<td class="'+avCellClass(v,cap)+'">'+v+'</td>'; }).join('')+'<td>1:'+ratios[key]+'</td></tr>'; }
+  return '<p style="color:var(--grey);font-size:13px;margin-top:0">A what-if for once you are registered on the Childcare on Domestic Premises (group) ratios. Capacity is staff \u00d7 the ratio for each band. This is a planning view, not the childminder limits.</p>'+
+    '<div style="display:flex;gap:16px;flex-wrap:wrap">'+
+      '<div class="field" style="max-width:200px"><label for="av_date3">Date to check</label><input id="av_date3" type="date" value="'+esc(asOf)+'" onchange="AV.date=this.value;renderAvail()"></div>'+
+      '<div class="field" style="max-width:200px"><label for="av_staff">Staff in ratio</label><input id="av_staff" type="number" min="1" max="10" value="'+staff+'" onchange="AV.staff=parseInt(this.value)||1;renderAvail()"></div>'+
+    '</div>'+
+    '<table class="htable" style="margin-top:10px"><tr><th>Age group</th>'+days.map(x=>'<th>'+x.slice(0,3)+'</th>').join('')+'<th>Ratio</th></tr>'+
+      row('under2','Under 2')+row('two','Two-year-olds')+row('threeEY','Three and over (EY)')+row('school','School age (5 to 7)')+'</table>'+
+    '<p style="color:var(--grey);font-size:12px;margin-top:8px">Group ratios: under 2 = 1:3, two-year-olds = 1:5, three and over = 1:8, school age = 1:8 (guideline).</p>';
+}
+function avEnq(){
+  var days=['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  return '<p style="color:var(--grey);font-size:13px;margin-top:0">Enter an enquiry and this checks, month by month for a year, whether the requested days fit within your childminder ratios, and tells you the earliest you could take the child.</p>'+
+    '<div style="display:flex;gap:16px;flex-wrap:wrap">'+
+      '<div class="field" style="max-width:200px"><label for="eq_dob">Date of birth</label><input id="eq_dob" type="date" value="'+esc(AV.eqDob||'')+'"></div>'+
+      '<div class="field" style="max-width:200px"><label for="eq_start">Earliest start wanted</label><input id="eq_start" type="date" value="'+esc(AV.eqStart||'')+'"></div>'+
+      '<div class="field" style="max-width:160px"><label for="eq_adults">Adults in ratio</label><input id="eq_adults" type="number" min="1" max="6" value="'+(AV.adults||1)+'"></div>'+
+    '</div>'+
+    '<div class="field full"><label>Days wanted</label><div class="days">'+days.map(function(d){ var on=AV.eqDays&&AV.eqDays.indexOf(d)>=0; return '<label class="checkline"><input type="checkbox" id="eq_'+d.slice(0,3)+'" '+(on?'checked':'')+'><span>'+d+'</span></label>'; }).join('')+'</div></div>'+
+    '<div class="formactions"><button class="primary" onclick="checkEnquiry()">Check availability</button></div>'+
+    '<div id="eq_results" style="margin-top:6px"></div>';
+}
+function checkEnquiry(){
+  var days=['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  var dob=(document.getElementById('eq_dob')||{}).value||'';
+  var earliest=(document.getElementById('eq_start')||{}).value||'';
+  var adults=parseInt((document.getElementById('eq_adults')||{}).value,10)||1;
+  var wanted=days.filter(function(d){ var e=document.getElementById('eq_'+d.slice(0,3)); return e&&e.checked; });
+  AV.eqDob=dob; AV.eqStart=earliest; AV.adults=adults; AV.eqDays=wanted;
+  var out=document.getElementById('eq_results');
+  if(!dob){ out.innerHTML='<p style="color:#A13A2A">Please enter a date of birth.</p>'; return; }
+  if(!wanted.length){ out.innerHTML='<p style="color:#A13A2A">Please tick at least one day wanted.</p>'; return; }
+  var lim1=adults, lim5=3*adults, lim8=6*adults;
+  var startISO=earliest||todayISO();
+  var rows='', earliestMonth='';
+  for(var i=0;i<12;i++){
+    var iso=addMonthsISO(startISO,i);
+    var res=availabilityData(iso).res;
+    var band=bandOf({dob:dob,atSchool:false},iso);
+    var born=new Date(iso)>=new Date(dob);
+    var cells='', allOk=true, anyWanted=false;
+    days.forEach(function(d){
+      if(wanted.indexOf(d)<0){ cells+='<td style="color:#bbb">,</td>'; return; }
+      anyWanted=true; var r=res[d], ok=false;
+      if(!born){ ok=false; }
+      else if(band==='Under 1s'){ ok=(r.u1+1<=lim1)&&(r.u5+1<=lim5)&&((r.u5+r.s57)+1<=lim8); }
+      else if(band==='Under 5s'){ ok=(r.u5+1<=lim5)&&((r.u5+r.s57)+1<=lim8); }
+      else if(band==='Under 8s'){ ok=((r.u5+r.s57)+1<=lim8); }
+      else { ok=true; }
+      if(!ok) allOk=false;
+      cells+='<td class="'+(ok?'avok':'avover')+'">'+(ok?'Yes':'No')+'</td>';
+    });
+    var canStart = allOk && anyWanted && (new Date(iso)>=new Date(startISO));
+    if(canStart && !earliestMonth) earliestMonth=iso;
+    rows+='<tr><td>'+monthLabel(iso)+'</td>'+cells+'<td class="'+(canStart?'avok':'')+'">'+(canStart?'Yes':'No')+'</td></tr>';
+  }
+  var verdict = earliestMonth
+    ? '<div style="background:#E8F1EC;border-left:3px solid #1A7A4A;padding:10px 12px;border-radius:4px;margin-bottom:10px"><strong>You could take this child from '+monthLabel(earliestMonth)+'</strong>, on all the requested days, with '+adults+' adult(s) in ratio.</div>'
+    : '<div style="background:#F4DEDA;border-left:3px solid #A13A2A;padding:10px 12px;border-radius:4px;margin-bottom:10px;color:#A13A2A"><strong>No month in the next year has room on every requested day</strong> with '+adults+' adult(s) in ratio. Try fewer days, a later start, or more adults.</div>';
+  out.innerHTML=verdict+'<table class="htable"><tr><th>Month</th>'+days.map(x=>'<th>'+x.slice(0,3)+'</th>').join('')+'<th>Can start?</th></tr>'+rows+'</table>'+
+    '<p style="color:var(--grey);font-size:12px;margin-top:8px">A day shows Yes if adding this child keeps that day within ratio. The child\u2019s own age is projected forward each month. Existing children are included with their start and leave dates.</p>';
+}
+function saveSettings(){ var o={}; FEE_ROWS.forEach(r=>{ o[r.key]=v('s_'+r.key); }); data.settings=o;
+  persist(); markDirty(); flag('Fees and terms saved'); closeForm(); }
+
+/* ---------- record form ---------- */
+function recordList(){ return currentChildId ? data.children.filter(c=>c.id===currentChildId)
+  : data.children.slice().sort((a,b)=>fullName(a).localeCompare(fullName(b))); }
+function healthText(c){ return [c.allergies,c.dietary,c.alert].filter(Boolean).join('; '); }
+function rff(label,val){ return '<div class="rff">'+(label?'<span class="rfl">'+esc(label)+'</span>':'')+
+  '<span class="rfv'+(val?'':' empty')+'">'+(val?esc(val):'&nbsp;')+'</span></div>'; }
+function recordCarer(c,n){
+  const name=[c['c'+n+'name'], c['c'+n+'label']&&'('+c['c'+n+'label']+')'].filter(Boolean).join(' ');
+  return '<div class="rf2">'+rff('Name',name)+rff('Place of work',c['c'+n+'work'])+
+     rff('Work number',c['c'+n+'workphone'])+rff('Mobile number',c['c'+n+'mobile'])+'</div>'+
+     rff('Email address', c['c'+n+'email']);
+}
+function hoursTable(c){
+  const att=c.attendance||[];
+  const days=['Monday','Tuesday','Wednesday','Thursday','Friday'].concat(['Saturday','Sunday'].filter(d=>att.find(a=>a.day===d)));
+  let h='<table class="htable"><tr><th>Day</th><th>From (am/pm)</th><th>To (am/pm)</th></tr>';
+  days.forEach(d=>{ const a=att.find(x=>x.day===d)||{}; h+='<tr><td>'+d+'</td><td>'+(a.from?fmtTime(a.from):'')+'</td><td>'+(a.to?fmtTime(a.to):'')+'</td></tr>'; });
+  return h+'</table>';
+}
+function recordFormHTML(c){
+  const rev=document.getElementById('reviewedInput').value; const s=data.settings||{};
+  let h='<div class="recform"><div class="brand">Little Puddings</div>'+
+    '<h1 class="title">Child Record Form and Contract Details</h1>'+
+    '<p class="reviewed">Last updated: '+(rev?esc(fmtDate(rev)):'____________')+'. Please check every detail and correct anything that is wrong.</p>';
+  h+='<h3 class="rfsec">Child\u2019s details</h3><div class="rf2">'+
+     rff('Child\u2019s name',fullName(c))+rff('Sex',c.sex)+
+     rff('Preferred name',c.preferred)+rff('Date of birth',fmtDate(c.dob))+'</div>'+
+     rff('Home address',c.address)+'<div class="rf2">'+rff('Telephone number',c.homephone)+'<div></div></div>';
+  h+='<h3 class="rfsec">Parent / guardian / carer</h3>'+recordCarer(c,1)+
+     ((c.c2name||c.c2mobile||c.c2work)?('<div style="height:8px"></div>'+recordCarer(c,2)):'');
+  h+='<h3 class="rfsec">Doctor\u2019s details</h3><div class="rf2">'+rff('Doctor / surgery',c.doctorname)+rff('Telephone',c.doctorphone)+'</div>';
+  h+='<h3 class="rfsec">Emergency contacts (other than parent / guardian / carer)</h3><div class="rf2">'+
+     rff('Contact name',c.ec1name)+rff('Contact number',c.ec1phone)+
+     rff('Contact name',c.ec2name)+rff('Contact number',c.ec2phone)+'</div>';
+  h+='<h3 class="rfsec">Allergies / special diet / health requirements / illnesses</h3>'+rff('',healthText(c));
+  h+='<h3 class="rfsec">Contracted hours</h3>'+hoursTable(c)+rff('Funding entitlement',c.funding);
+  h+='<h3 class="rfsec">Fees and terms</h3>'+
+     '<table class="htable"><tr><th>Service</th><th>Rate</th></tr>'+
+       recordFeeTableRows(c).map(r=>'<tr><td>'+esc(r.label)+'</td><td>'+esc(r.rate)+'</td></tr>').join('')+'</table>'+
+     '<p class="rfterms" style="margin-top:8px">Your child\u2019s agreed rate is shown above and set out in full in your individual contract. Funded hours are free of charge; any wrap-around hours are listed separately on your invoice. Payment is required for all contracted sessions whether or not your child attends, except absence due to illness within our own household.</p>';
+  h+='<div class="rfsign">I confirm that the details on this form are correct.<br><br>'+
+     'Signed ............................................................. &nbsp; Date ...................... &nbsp; (parent / carer)</div>';
+  return h+'</div>';
+}
+function buildRecordDocHTML(){
+  const list=recordList();
+  if(!list.length) return '<p class="anone">No children to show. Add a child first.</p>';
+  return list.map(recordFormHTML).join('');
+}
+
+/* record form, Word */
+function wrf2(l1,v1,l2,v2){
+  const lab='font-family:Arial;font-size:9pt;font-weight:bold;color:#6B6460;padding:3px 6px;width:22%;vertical-align:top';
+  const val='font-family:Arial;font-size:10pt;border-bottom:0.5pt solid #cccccc;padding:3px 6px;width:28%;vertical-align:bottom';
+  return '<tr><td style="'+lab+'">'+esc(l1)+'</td><td style="'+val+'">'+esc(v1||'')+'</td>'+
+    '<td style="'+lab+'">'+esc(l2||'')+'</td><td style="'+val+'">'+esc(v2||'')+'</td></tr>';
+}
+function wrfFull(l,v){
+  const lab='font-family:Arial;font-size:9pt;font-weight:bold;color:#6B6460;padding:3px 6px;vertical-align:top';
+  const val='font-family:Arial;font-size:10pt;border-bottom:0.5pt solid #cccccc;padding:3px 6px';
+  return '<tr><td style="'+lab+'" width="22%">'+esc(l)+'</td><td style="'+val+'" colspan="3">'+esc(v||'')+'</td></tr>';
+}
+function wSec(t){ return '<div style="font-family:Georgia,serif;color:#1A7A4A;font-size:12pt;font-weight:bold;border-bottom:1pt solid #D4A017;margin:14px 0 6px;padding-bottom:3px">'+esc(t)+'</div>'; }
+function wordCarerRows(c,n){
+  return wrf2('Name',[c['c'+n+'name'], c['c'+n+'label']&&'('+c['c'+n+'label']+')'].filter(Boolean).join(' '),'Place of work',c['c'+n+'work'])+
+     wrf2('Work number',c['c'+n+'workphone'],'Mobile number',c['c'+n+'mobile'])+
+     wrfFull('Email address',c['c'+n+'email']);
+}
+function wordHoursTable(c){
+  const att=c.attendance||[];
+  const days=['Monday','Tuesday','Wednesday','Thursday','Friday'].concat(['Saturday','Sunday'].filter(d=>att.find(a=>a.day===d)));
+  const th='font-family:Arial;font-size:9pt;font-weight:bold;background:#E8F1EC;color:#1A7A4A;border:1pt solid #cccccc;padding:4px 8px;text-align:left';
+  const td='font-family:Arial;font-size:10pt;border:1pt solid #cccccc;padding:4px 8px';
+  let h='<table width="60%" cellspacing="0" cellpadding="0" style="border-collapse:collapse"><tr><td style="'+th+'">Day</td><td style="'+th+'">From</td><td style="'+th+'">To</td></tr>';
+  days.forEach(d=>{ const a=att.find(x=>x.day===d)||{}; h+='<tr><td style="'+td+'">'+d+'</td><td style="'+td+'">'+(a.from?fmtTime(a.from):'')+'</td><td style="'+td+'">'+(a.to?fmtTime(a.to):'')+'</td></tr>'; });
+  return h+'</table>';
+}
+function wordRecordForm(c){
+  const rev=document.getElementById('reviewedInput').value; const s=data.settings||{};
+  let h='<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:11pt">Little Puddings</div>'+
+    '<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:18pt;margin:2px 0">Child Record Form and Contract Details</div>'+
+    '<div style="font-family:Arial;font-size:9pt;color:#6B6460;border-bottom:2pt solid #D4A017;padding-bottom:6px;margin-bottom:6px">Last updated: '+(rev?esc(fmtDate(rev)):'____________')+'. Please check every detail and correct anything that is wrong.</div>';
+  h+=wSec('Child\u2019s details')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+
+     wrf2('Child\u2019s name',fullName(c),'Sex',c.sex)+
+     wrf2('Preferred name',c.preferred,'Date of birth',fmtDate(c.dob))+
+     wrfFull('Home address',c.address)+
+     wrf2('Telephone number',c.homephone,'','')+'</table>';
+  h+=wSec('Parent / guardian / carer')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+wordCarerRows(c,1)+'</table>';
+  if(c.c2name||c.c2mobile||c.c2work) h+='<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-top:6px">'+wordCarerRows(c,2)+'</table>';
+  h+=wSec('Doctor\u2019s details')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+wrf2('Doctor / surgery',c.doctorname,'Telephone',c.doctorphone)+'</table>';
+  h+=wSec('Emergency contacts (other than parent / guardian / carer)')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+
+     wrf2('Contact name',c.ec1name,'Contact number',c.ec1phone)+
+     wrf2('Contact name',c.ec2name,'Contact number',c.ec2phone)+'</table>';
+  h+=wSec('Allergies / special diet / health requirements / illnesses')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+wrfFull('',healthText(c))+'</table>';
+  h+=wSec('Contracted hours')+wordHoursTable(c)+
+     '<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-top:4px">'+wrfFull('Funding entitlement',c.funding)+'</table>';
+  var feeTh='font-family:Arial;font-size:9pt;font-weight:bold;background:#E8F1EC;color:#1A7A4A;border:1pt solid #cccccc;padding:4px 8px;text-align:left';
+  var feeTd='font-family:Arial;font-size:9.5pt;border:1pt solid #cccccc;padding:4px 8px;vertical-align:top';
+  h+=wSec('Fees and terms')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+
+     '<tr><td style="'+feeTh+'" width="55%">Service</td><td style="'+feeTh+'">Rate</td></tr>'+
+     recordFeeTableRows(c).map(r=>'<tr><td style="'+feeTd+'">'+esc(r.label)+'</td><td style="'+feeTd+'">'+esc(r.rate)+'</td></tr>').join('')+'</table>'+
+     '<div style="font-family:Arial;font-size:9pt;color:#6B6460;margin-top:6px">Your child\u2019s agreed rate is shown above and set out in full in your individual contract. Funded hours are free of charge; any wrap-around hours are listed separately on your invoice. Payment is required for all contracted sessions whether or not your child attends, except absence due to illness within our own household.</div>';
+  h+='<div style="font-family:Arial;font-size:10pt;background:#FBF3DC;border-left:3pt solid #D4A017;padding:8px 10px;margin-top:12px">I confirm that the details on this form are correct.<br><br>'+
+     'Signed ............................................................. &#160; Date ...................... &#160; (parent / carer)</div>';
+  return h;
+}
+function buildRecordWordHTML(){
+  const list=recordList();
+  if(!list.length) return '<p style="font-family:Arial">No children to show.</p>';
+  return list.map((c,i)=>(i?'<p style="page-break-before:always;margin:0"></p>':'')+wordRecordForm(c)).join('');
+}
+
+/* ---------- generate document ---------- */
+let currentDoc='emergency';
+let currentChildId=null;
+function generate(type,childId){ currentDoc=type||'emergency'; currentChildId=childId||null; emergencyOnly=false; showPreview(); updatePreviewBar();
+  if(!document.getElementById('reviewedInput').value)
+    document.getElementById('reviewedInput').value=new Date().toISOString().slice(0,10);
+  renderDoc(); }
+function showPreview(){ document.getElementById('manager').style.display='none';
+  document.getElementById('preview').style.display='block'; window.scrollTo(0,0); }
+function showManager(){ document.getElementById('preview').style.display='none';
+  document.getElementById('manager').style.display='block'; }
+
+function carerRows(label,name,mobile,work,workphone){
+  let h=''; if(name||mobile) h+='<div class="row"><span class="lbl">'+esc(label||'')+':</span><span>'+esc(name||'')+'</span><span class="ph">'+esc(mobile||'')+'</span></div>';
+  if(work||workphone) h+='<div class="row"><span class="lbl">Work:</span><span>'+esc(work||'')+'</span><span class="ph">'+esc(workphone||'')+'</span></div>';
+  return h;
+}
+function childHTML(c){
+  const col=bandColor(bandOf(c));
+  let h='<div class="child" style="border-left-color:'+col+'">';
+  h+='<div class="nameline"><span class="cname">'+esc(fullName(c).toUpperCase())+
+     (c.preferred?' <span style="font-weight:400;font-style:italic">(“'+esc(c.preferred)+'”)</span>':'')+
+     '</span><span class="dob">DOB '+esc(fmtDate(c.dob))+'</span></div>';
+  h+=carerRows(c.c1label,c.c1name,c.c1mobile,c.c1work,c.c1workphone);
+  h+=carerRows(c.c2label,c.c2name,c.c2mobile,c.c2work,c.c2workphone);
+  const att=attendsOf(c);
+  if(att) h+='<div class="row"><span class="lbl">Attends:</span><span>'+esc(att)+'</span><span class="ph"></span></div>';
+  if(c.school) h+='<div class="row"><span class="lbl">School:</span><span>'+esc(c.school)+'</span><span class="ph">'+esc(c.schoolphone||'')+'</span></div>';
+  const banner=allergyBanner(c);
+  if(banner) h+='<div class="alert">'+esc(banner.toUpperCase())+'</div>';
+  h+='</div>'; return h;
+}
+function staffHTML(s){
+  let h='<div class="staffblock">';
+  h+='<div class="nameline"><span class="cname">'+esc((s.name||'').toUpperCase())+'</span><span class="dob">'+esc(s.role||'')+'</span></div>';
+  if(s.nok||s.nokphone) h+='<div class="row"><span class="lbl">Next of kin:</span><span>'+esc([s.nok,s.nokrel&&'('+s.nokrel+')'].filter(Boolean).join(' '))+'</span><span class="ph">'+esc(s.nokphone||'')+'</span></div>';
+  if(s.medication) h+='<div class="row"><span class="lbl">Medication:</span><span>'+esc(s.medication)+'</span><span class="ph"></span></div>';
+  if(s.emergency) s.emergency.split('\n').filter(x=>x.trim()).forEach(line=>{
+    h+='<div class="row"><span class="lbl">Emergency:</span><span>'+esc(line.trim())+'</span><span class="ph"></span></div>'; });
+  if(s.childrenNote) h+='<div class="row"><span class="lbl">Children:</span><span>'+esc(s.childrenNote)+'</span><span class="ph"></span></div>';
+  h+='</div>'; return h;
+}
+function groupChildren(){
+  const g={}; BANDS.forEach(b=>g[b.name]=[]);
+  data.children.forEach(c=>g[bandOf(c)].push(c));
+  BANDS.forEach(b=>g[b.name].sort((x,y)=>new Date(y.dob||0)-new Date(x.dob||0)));
+  return g;
+}
+function buildDocHTML(){
+  const grouped=groupChildren();
+  const rev=document.getElementById('reviewedInput').value;
+  let h='<div class="brand">Little Puddings</div>'+
+        '<h1 class="title">In case of Emergency</h1>'+
+        '<div class="docsub">Details of next of kin for minded children and staff</div>'+
+        '<p class="reviewed">Reviewed: '+(rev?esc(fmtDate(rev)):'____________')+' &nbsp;·&nbsp; Confidential</p>';
+  BANDS.forEach(b=>{ const list=grouped[b.name]; if(!list.length) return;
+    h+='<div class="bandhead" style="background:'+b.color+'">'+b.name+'</div>';
+    list.forEach(c=>h+=childHTML(c)); });
+  if(data.children.length===0) h+='<p style="color:var(--grey);font-style:italic">No children added yet.</p>';
+  if(data.staff.length){
+    h+='<div class="bandhead" style="background:#6B6460">Staff</div>';
+    data.staff.forEach(s=>h+=staffHTML(s));
+  }
+  h+='<div class="docfoot"><span>Little Puddings, Lincoln LN6 0UL</span><span>Confidential, contains personal data</span></div>';
+  return h;
+}
+function renderDoc(){ document.getElementById('document').innerHTML =
+  currentDoc==='allergy' ? buildAllergyDocHTML() :
+  currentDoc==='trip' ? buildTripDocHTML() :
+  currentDoc==='holiday' ? buildHolidayDocHTML() :
+  currentDoc==='record' ? buildRecordDocHTML() : buildDocHTML(); }
+
+function allergyChildren(){
+  return data.children.filter(hasAllergyInfo)
+    .slice().sort((a,b)=>fullName(a).localeCompare(fullName(b)));
+}
+function buildAllergyDocHTML(){
+  const list=allergyChildren();
+  const rev=document.getElementById('reviewedInput').value;
+  let h='<div class="brand">Little Puddings</div>'+
+        '<h1 class="title">Allergies &amp; Dietary Requirements</h1>'+
+        '<div class="docsub">Kitchen reference, taken from each child\u2019s record</div>'+
+        '<p class="reviewed">Reviewed: '+(rev?esc(fmtDate(rev)):'____________')+' &nbsp;\u00b7&nbsp; Confidential</p>';
+  if(!list.length){ h+='<p class="anone">No allergies or dietary requirements recorded yet.</p>'; }
+  else{
+    h+='<table class="atable"><thead><tr><th style="width:26%">Child</th><th style="width:28%">Allergies</th><th style="width:28%">Dietary requirements</th><th>Other medical</th></tr></thead><tbody>'+
+      list.map(c=>'<tr><td class="an">'+esc(fullName(c))+'</td>'+
+        '<td>'+(c.allergies?esc(c.allergies):'<span class="anone">None recorded</span>')+'</td>'+
+        '<td>'+(c.dietary?esc(c.dietary):'<span class="anone">None recorded</span>')+'</td>'+
+        '<td>'+(c.alert?esc(c.alert):'')+'</td></tr>').join('')+
+      '</tbody></table>'+
+      '<p class="reviewed" style="margin-top:14px">This sheet lists only children with a recorded allergy, dietary requirement or medical note. Always check a child\u2019s full record if unsure.</p>';
+  }
+  h+='<div class="docfoot"><span>Little Puddings, Lincoln LN6 0UL</span><span>Confidential, contains personal data</span></div>';
+  return h;
+}
+function buildAllergyWordHTML(){
+  const list=allergyChildren(); const rev=document.getElementById('reviewedInput').value;
+  let h='<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:11pt">Little Puddings</div>'+
+        '<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:22pt;margin:2px 0">Allergies &amp; Dietary Requirements</div>'+
+        '<div style="font-family:Georgia,serif;font-style:italic;color:#6B6460;font-size:11pt;border-bottom:2pt solid #D4A017;padding-bottom:6px">Kitchen reference, taken from each child\u2019s record</div>'+
+        '<div style="font-family:Arial;font-size:9pt;color:#6B6460;margin:6px 0 14px 0">Reviewed: '+(rev?esc(fmtDate(rev)):'____________')+' &#183; Confidential</div>';
+  if(!list.length){ h+='<p style="font-family:Arial;color:#6B6460;font-style:italic">No allergies or dietary requirements recorded yet.</p>'; }
+  else{
+    const th='font-family:Arial;font-size:10pt;font-weight:bold;color:#A13A2A;background:#F4DEDA;border:1pt solid #E4C8C2;padding:5px 8px;text-align:left';
+    const td='font-family:Arial;font-size:10pt;border:1pt solid #cccccc;padding:5px 8px;vertical-align:top';
+    h+='<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+
+      '<tr><td width="26%" style="'+th+'">Child</td><td width="28%" style="'+th+'">Allergies</td><td width="28%" style="'+th+'">Dietary requirements</td><td style="'+th+'">Other medical</td></tr>'+
+      list.map(c=>'<tr><td style="'+td+';font-weight:bold">'+esc(fullName(c))+'</td>'+
+        '<td style="'+td+'">'+esc(c.allergies||'')+'</td>'+
+        '<td style="'+td+'">'+esc(c.dietary||'')+'</td>'+
+        '<td style="'+td+'">'+esc(c.alert||'')+'</td></tr>').join('')+
+      '</table>';
+  }
+  h+='<div style="font-family:Arial;font-size:8.5pt;color:#6B6460;border-top:1pt solid #cccccc;margin-top:18px;padding-top:6px">Little Puddings, Lincoln LN6 0UL &#160;&#183;&#160; Confidential, contains personal data</div>';
+  return h;
+}
+
+/* ---------- Trip / outing register ---------- */
+function ageShort(c){ var y=ageYears(c.dob); if(y===null) return '';
+  if(y<1){ var d=new Date(c.dob),t=new Date(); var m=(t.getFullYear()-d.getFullYear())*12+(t.getMonth()-d.getMonth()); if(t.getDate()<d.getDate())m--; if(m<0)m=0; return m+' mo'; }
+  return y+' yr'; }
+function tripMedical(c){ return [c.allergies,c.dietary,c.alert].filter(Boolean).join('; '); }
+function tripChildrenSorted(){ return data.children.slice().sort(function(a,b){
+  var s=(a.surname||'').toLowerCase().localeCompare((b.surname||'').toLowerCase());
+  return s!==0?s:(a.first||'').toLowerCase().localeCompare((b.first||'').toLowerCase()); }); }
+function tripContactList(c){ var o=[];
+  if(c.c1name||c.c1mobile) o.push(esc(((c.c1name||'')+' '+(c.c1mobile||'')).trim()));
+  if(c.c2name||c.c2mobile) o.push(esc(((c.c2name||'')+' '+(c.c2mobile||'')).trim()));
+  if(c.ec1name||c.ec1phone) o.push('Emergency: '+esc(((c.ec1name||'')+' '+(c.ec1phone||'')).trim()));
+  if(c.ec2name||c.ec2phone) o.push('Emergency: '+esc(((c.ec2name||'')+' '+(c.ec2phone||'')).trim()));
+  return o; }
+function buildTripDocHTML(){
+  const list=tripChildrenSorted();
+  let h='<div class="brand">Little Puddings</div>'+
+        '<h1 class="title">Trip / Outing Register</h1>'+
+        '<div class="docsub">Take on every outing. Emergency contacts and allergies for each child.</div>'+
+        '<p class="reviewed" style="margin-top:8px">Date of outing: ____________________ &nbsp; Destination: ____________________________</p>'+
+        '<p class="reviewed" style="margin-top:2px">Staff attending: ____________________ &nbsp; Adults : children ratio: ____________</p>'+
+        '<p class="reviewed" style="margin-top:6px">Headcounts (tick and note time): Before leaving \u2610 ______ &nbsp; On arrival \u2610 ______ &nbsp; Before return \u2610 ______ &nbsp; Back at setting \u2610 ______</p>';
+  if(!list.length){ h+='<p class="anone">No children added yet.</p>'; }
+  else{
+    h+='<table class="atable"><thead><tr><th style="width:6%">On trip</th><th style="width:24%">Child</th><th style="width:8%">Age</th><th style="width:34%">Emergency contacts</th><th>Allergies / medical</th></tr></thead><tbody>'+
+      list.map(function(c){ var con=tripContactList(c);
+        return '<tr><td style="text-align:center;font-size:15px">\u2610</td>'+
+        '<td class="an">'+esc(fullName(c))+'<div style="font-weight:400;color:#6B6460;font-size:12px">DOB '+esc(fmtDate(c.dob))+'</div></td>'+
+        '<td>'+esc(ageShort(c))+'</td>'+
+        '<td>'+(con.length?con.join('<br>'):'<span class="anone">No contact recorded</span>')+'</td>'+
+        '<td>'+(tripMedical(c)?esc(tripMedical(c)):'<span class="anone">None</span>')+'</td></tr>'; }).join('')+
+      '</tbody></table>'+
+      '<p class="reviewed" style="margin-top:12px">Children listed: '+list.length+'. Tick each child on and count them at every headcount. Keep this sheet with you throughout the outing.</p>';
+  }
+  h+='<div class="docfoot"><span>Little Puddings, Lincoln LN6 0UL</span><span>Confidential, contains personal data</span></div>';
+  return h;
+}
+function buildTripWordHTML(){
+  const list=tripChildrenSorted();
+  let h='<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:11pt">Little Puddings</div>'+
+        '<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:22pt;margin:2px 0">Trip / Outing Register</div>'+
+        '<div style="font-family:Georgia,serif;font-style:italic;color:#6B6460;font-size:11pt;border-bottom:2pt solid #D4A017;padding-bottom:6px">Take on every outing. Emergency contacts and allergies for each child.</div>'+
+        '<div style="font-family:Arial;font-size:10pt;margin:8px 0 2px">Date of outing: ____________________ &#160; Destination: ____________________________</div>'+
+        '<div style="font-family:Arial;font-size:10pt;margin:2px 0">Staff attending: ____________________ &#160; Adults : children ratio: ____________</div>'+
+        '<div style="font-family:Arial;font-size:10pt;margin:6px 0 12px">Headcounts (tick and note time): Before leaving &#9744; ______ &#160; On arrival &#9744; ______ &#160; Before return &#9744; ______ &#160; Back at setting &#9744; ______</div>';
+  if(!list.length){ h+='<p style="font-family:Arial;color:#6B6460;font-style:italic">No children added yet.</p>'; }
+  else{
+    const th='font-family:Arial;font-size:10pt;font-weight:bold;color:#1A7A4A;background:#E8F1EC;border:1pt solid #cccccc;padding:5px 8px;text-align:left';
+    const td='font-family:Arial;font-size:10pt;border:1pt solid #cccccc;padding:5px 8px;vertical-align:top';
+    h+='<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+
+      '<tr><td width="7%" style="'+th+'">On trip</td><td width="24%" style="'+th+'">Child</td><td width="8%" style="'+th+'">Age</td><td width="34%" style="'+th+'">Emergency contacts</td><td style="'+th+'">Allergies / medical</td></tr>'+
+      list.map(function(c){ var con=tripContactList(c);
+        return '<tr><td align="center" style="'+td+';font-size:13pt">&#9744;</td>'+
+        '<td style="'+td+';font-weight:bold">'+esc(fullName(c))+'<div style="font-weight:normal;color:#6B6460;font-size:8.5pt">DOB '+esc(fmtDate(c.dob))+'</div></td>'+
+        '<td style="'+td+'">'+esc(ageShort(c))+'</td>'+
+        '<td style="'+td+'">'+(con.join('<br>'))+'</td>'+
+        '<td style="'+td+'">'+esc(tripMedical(c))+'</td></tr>'; }).join('')+
+      '</table>'+
+      '<div style="font-family:Arial;font-size:9pt;color:#6B6460;margin-top:10px">Children listed: '+list.length+'. Tick each child on and count them at every headcount. Keep this sheet with you throughout the outing.</div>';
+  }
+  h+='<div style="font-family:Arial;font-size:8.5pt;color:#6B6460;border-top:1pt solid #cccccc;margin-top:18px;padding-top:6px">Little Puddings, Lincoln LN6 0UL &#160;&#183;&#160; Confidential, contains personal data</div>';
+  return h;
+}
+
+/* ---------- Word export (table-based so Word lays it out correctly) ---------- */
+function wRow(lbl,val,ph){
+  return '<tr>'+
+    '<td width="95" style="font-family:Arial;font-size:10pt;font-weight:bold;vertical-align:top;padding:1px 4px">'+esc(lbl)+'</td>'+
+    '<td style="font-family:Arial;font-size:10pt;vertical-align:top;padding:1px 4px">'+esc(val||'')+'</td>'+
+    '<td width="130" align="right" style="font-family:Arial;font-size:10pt;vertical-align:top;white-space:nowrap;padding:1px 4px">'+esc(ph||'')+'</td></tr>';
+}
+function wCarer(label,name,mobile,work,workphone){
+  let h=''; if(name||mobile) h+=wRow((label||'')+':',name,mobile);
+  if(work||workphone) h+=wRow('Work:',work,workphone); return h;
+}
+function wBand(name,color){
+  return '<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:16px 0 8px 0">'+
+    '<tr><td bgcolor="'+color+'" style="background:'+color+';font-family:Georgia,serif;font-size:13pt;font-weight:bold;color:#ffffff;padding:4px 10px">'+esc(name)+'</td></tr></table>';
+}
+function wChild(c){
+  const col=bandColor(bandOf(c));
+  let h='<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:0 0 4px 0;border-left:3pt solid '+col+'">';
+  h+='<tr><td colspan="2" style="font-family:Arial;font-size:11pt;font-weight:bold;padding:2px 4px">'+esc(fullName(c).toUpperCase())+
+     (c.preferred?' <span style="font-weight:normal;font-style:italic">(&#8220;'+esc(c.preferred)+'&#8221;)</span>':'')+'</td>'+
+     '<td width="130" align="right" style="font-family:Georgia,serif;font-size:9.5pt;font-style:italic;color:#6B6460;white-space:nowrap;padding:2px 4px">DOB '+esc(fmtDate(c.dob))+'</td></tr>';
+  h+=wCarer(c.c1label,c.c1name,c.c1mobile,c.c1work,c.c1workphone);
+  h+=wCarer(c.c2label,c.c2name,c.c2mobile,c.c2work,c.c2workphone);
+  const att=attendsOf(c);
+  if(att) h+=wRow('Attends:',att,'');
+  if(c.school) h+=wRow('School:',c.school,c.schoolphone);
+  h+='</table>';
+  const banner=allergyBanner(c);
+  if(banner) h+='<table width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 10px 0"><tr>'+
+    '<td bgcolor="#F4DEDA" align="center" style="background:#F4DEDA;font-family:Arial;font-size:9.5pt;font-weight:bold;color:#A13A2A;padding:4px">'+esc(banner.toUpperCase())+'</td></tr></table>';
+  else h+='<div style="font-size:6pt">&#160;</div>';
+  return h;
+}
+function wStaff(s){
+  let h='<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:0 0 10px 0;border-left:3pt solid #6B6460">';
+  h+='<tr><td colspan="2" style="font-family:Arial;font-size:11pt;font-weight:bold;padding:2px 4px">'+esc((s.name||'').toUpperCase())+'</td>'+
+     '<td width="180" align="right" style="font-family:Georgia,serif;font-size:9.5pt;font-style:italic;color:#6B6460;padding:2px 4px">'+esc(s.role||'')+'</td></tr>';
+  if(s.nok||s.nokphone) h+=wRow('Next of kin:',[s.nok,s.nokrel&&'('+s.nokrel+')'].filter(Boolean).join(' '),s.nokphone);
+  if(s.medication) h+=wRow('Medication:',s.medication,'');
+  if(s.emergency) s.emergency.split('\n').filter(x=>x.trim()).forEach(l=>h+=wRow('Emergency:',l.trim(),''));
+  if(s.childrenNote) h+=wRow('Children:',s.childrenNote,'');
+  h+='</table>'; return h;
+}
+function buildWordHTML(){
+  const g=groupChildren(); const rev=document.getElementById('reviewedInput').value;
+  let h='<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:11pt">Little Puddings</div>'+
+        '<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:22pt;margin:2px 0">In case of Emergency</div>'+
+        '<div style="font-family:Georgia,serif;font-style:italic;color:#6B6460;font-size:11pt;border-bottom:2pt solid #D4A017;padding-bottom:6px">Details of next of kin for minded children and staff</div>'+
+        '<div style="font-family:Arial;font-size:9pt;color:#6B6460;margin:6px 0 14px 0">Reviewed: '+(rev?esc(fmtDate(rev)):'____________')+' &#183; Confidential</div>';
+  BANDS.forEach(b=>{ const list=g[b.name]; if(!list.length) return; h+=wBand(b.name,b.color); list.forEach(c=>h+=wChild(c)); });
+  if(!data.children.length) h+='<p style="font-family:Arial;color:#6B6460;font-style:italic">No children added yet.</p>';
+  if(data.staff.length){ h+=wBand('Staff','#6B6460'); data.staff.forEach(s=>h+=wStaff(s)); }
+  h+='<div style="font-family:Arial;font-size:8.5pt;color:#6B6460;border-top:1pt solid #cccccc;margin-top:18px;padding-top:6px">Little Puddings, Lincoln LN6 0UL &#160;&#183;&#160; Confidential, contains personal data</div>';
+  return h;
+}
+function downloadWord(){
+  let inner, title;
+  if(currentDoc==='allergy'){ inner=buildAllergyWordHTML(); title='Allergies and Dietary Requirements'; }
+  else if(currentDoc==='trip'){ inner=buildTripWordHTML(); title='Trip Outing Register'; }
+  else if(currentDoc==='record'){ inner=buildRecordWordHTML();
+    const c=currentChildId?data.children.find(x=>x.id===currentChildId):null;
+    title = c ? ('Child Record Form, '+fullName(c)) : 'Child Record Forms'; }
+  else { inner=buildWordHTML(); title='In case of Emergency'; }
+  const html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">'+
+    '<head><meta charset="utf-8"><title>'+title+'</title>'+
+    '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]-->'+
+    '<style>@page{size:A4;margin:1.6cm} body{font-family:Arial}</style></head>'+
+    '<body>'+inner+'</body></html>';
+  const blob=new Blob(['\ufeff'+html],{type:'application/msword'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=title+'.doc'; a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ---------- OneDrive sync (optional, loaded on demand) ---------- */
+var OD_DEFAULTS={clientId:'5a871fc6-d672-401e-a5a7-f9fb349ecc99',tenantId:'a824d7c9-201d-4ae2-afea-e75389e576f0',path:'Little Puddings Child Hub/child-hub.json'};
+var odApp=null, odAccount=null;
+function odCfg(){ var c={}; try{ c=JSON.parse(localStorage.getItem('lp_onedrive_cfg')||'{}'); }catch(e){}
+  return {clientId:c.clientId||OD_DEFAULTS.clientId, tenantId:c.tenantId||OD_DEFAULTS.tenantId, path:c.path||OD_DEFAULTS.path}; }
+function odSaveCfg(){ localStorage.setItem('lp_onedrive_cfg',JSON.stringify({clientId:v('od_client'),tenantId:v('od_tenant'),path:v('od_path')}));
+  odApp=null; odAccount=null; flag('OneDrive settings saved'); openOneDrive(); }
+function odRedirect(){ return location.origin+location.pathname; }
+function odLoadMsal(){ return new Promise(function(res,rej){ if(window.msal) return res();
+  var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/@azure/msal-browser@3/lib/msal-browser.min.js';
+  s.onload=function(){res();}; s.onerror=function(){rej(new Error('Could not load the Microsoft sign-in library. Check the internet connection.'));};
+  document.head.appendChild(s); }); }
+async function odInit(){ if(odApp) return; await odLoadMsal(); var cfg=odCfg();
+  odApp=new msal.PublicClientApplication({auth:{clientId:cfg.clientId,authority:'https://login.microsoftonline.com/'+cfg.tenantId,redirectUri:odRedirect()},cache:{cacheLocation:'localStorage'}});
+  await odApp.initialize();
+  var accts=odApp.getAllAccounts(); if(accts&&accts.length) odAccount=accts[0]; }
+async function odConnect(){ try{ await odInit();
+    var r=await odApp.loginPopup({scopes:['Files.ReadWrite','User.Read']}); odAccount=r.account;
+    flag('Connected to OneDrive'); openOneDrive();
+  }catch(e){ alert('Sign in did not complete: '+((e&&e.message)||e)); } }
+function odSignOut(){ if(odApp&&odAccount){ try{ odApp.logoutPopup({account:odAccount}); }catch(e){} } odAccount=null; openOneDrive(); }
+async function odToken(){ try{ return (await odApp.acquireTokenSilent({account:odAccount,scopes:['Files.ReadWrite']})).accessToken; }
+  catch(e){ return (await odApp.acquireTokenPopup({scopes:['Files.ReadWrite']})).accessToken; } }
+function odUrl(){ return 'https://graph.microsoft.com/v1.0/me/drive/root:/'+odCfg().path.split('/').filter(Boolean).map(encodeURIComponent).join('/')+':/content'; }
+function odUrlFor(path){ return 'https://graph.microsoft.com/v1.0/me/drive/root:/'+path.split('/').filter(Boolean).map(encodeURIComponent).join('/')+':/content'; }
+async function odLoadCloud(){ try{ await odInit(); if(!odAccount){ alert('Please connect to OneDrive first.'); return; }
+    if((data.children.length||data.staff.length) && !confirm('This replaces the data in this tool with the copy from OneDrive. Continue?')) return;
+    var tok=await odToken();
+    var resp=await fetch(odUrlFor(odCfg().path),{headers:{Authorization:'Bearer '+tok}});
+    if(resp.status===404){
+      var resp2=await fetch(odUrlFor('Little Puddings/emergency-database.json'),{headers:{Authorization:'Bearer '+tok}});
+      if(resp2.ok){ if(!confirm('No hub file yet, but your existing emergency database was found in OneDrive. Load it now? Save afterwards to store it in your Child Hub folder.')) return; resp=resp2; }
+      else { alert('There is no data file in OneDrive yet. Use Save to OneDrive to create it.'); return; }
+    }
+    if(!resp.ok){ alert('Could not read from OneDrive (status '+resp.status+').'); return; }
+    var d=await resp.json();
+    data={children:d.children||[],staff:d.staff||[],settings:d.settings||{},holiday:d.holiday||defaultHoliday()}; ensureModel(); persist(); renderLists(); dismissBanner();
+    fileDirty=false; updateDirty(); flag('Loaded from OneDrive');
+  }catch(e){ alert('Load failed: '+((e&&e.message)||e)); } }
+async function odSaveCloud(){ try{ await odInit(); if(!odAccount){ alert('Please connect to OneDrive first.'); return; }
+    if(!data.children.length && !data.staff.length && !confirm('This tool has no children or staff entered. Saving now overwrites any OneDrive copy with an empty file. Continue?')) return;
+    var tok=await odToken();
+    var resp=await fetch(odUrl(),{method:'PUT',headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify(data,null,2)});
+    if(!resp.ok){ alert('Could not save to OneDrive (status '+resp.status+').'); return; }
+    fileDirty=false; updateDirty(); flag('Saved to OneDrive');
+  }catch(e){ alert('Save failed: '+((e&&e.message)||e)); } }
+function openOneDrive(){ var cfg=odCfg(); var m=document.getElementById('formMount');
+  var status = odAccount ? ('Connected as '+esc(odAccount.username||odAccount.name||'your account')) : 'Not connected';
+  m.innerHTML='<div class="formcard"><h2>OneDrive sync</h2>'+
+    '<p style="color:var(--grey);font-size:13px;margin-top:0">Saves and loads this tool\u2019s data as a file in your business OneDrive. This works only when the page is opened from its web address, not from a double-clicked file.</p>'+
+    '<p style="margin:6px 0"><strong>Status:</strong> '+status+'</p>'+
+    '<div class="formactions" style="margin:6px 0">'+
+      (odAccount? '<button class="ghost" onclick="odSignOut()">Sign out</button>' : '<button class="primary" onclick="odConnect()">Connect OneDrive</button>')+
+      '<button onclick="odLoadCloud()">Load from OneDrive</button>'+
+      '<button onclick="odSaveCloud()">Save to OneDrive</button>'+
+    '</div>'+
+    '<div class="subhead">Settings</div>'+
+    '<div class="grid">'+
+      '<div class="field full"><label for="od_path">OneDrive file (folder and name)</label><input id="od_path" value="'+esc(cfg.path)+'"></div>'+
+      '<div class="field"><label for="od_client">App (client) ID</label><input id="od_client" value="'+esc(cfg.clientId)+'"></div>'+
+      '<div class="field"><label for="od_tenant">Directory (tenant) ID</label><input id="od_tenant" value="'+esc(cfg.tenantId)+'"></div>'+
+    '</div>'+
+    '<div style="background:#E8F1EC;border-left:3px solid #1A7A4A;padding:10px 12px;border-radius:4px;font-size:13px;margin-top:8px">In your Microsoft app registration, add this exact web address as a <strong>Single-page application</strong> redirect URI, and make sure <strong>Files.ReadWrite</strong> (delegated) is granted:<br><code style="word-break:break-all">'+esc(odRedirect())+'</code></div>'+
+    '<div class="formactions" style="margin-top:10px"><button class="primary" onclick="odSaveCfg()">Save settings</button><button class="ghost" onclick="closeForm()">Close</button></div></div>';
+  m.scrollIntoView({behavior:'smooth',block:'start'}); }
+
+/* ================= HOLIDAY PLANNER ================= */
+var HOLG={
+  u5 :{label:'Under 5',                short:'Under 5',  fill:'#E8F1EC',line:'#1A7A4A',text:'#155e39',ratio:true},
+  s8 :{label:'School child, under 8',  short:'School <8',fill:'#FBE3CE',line:'#C15C1E',text:'#8f4415',ratio:true},
+  s8p:{label:'School child, 8 or over',short:'School 8+',fill:'#DCEAF5',line:'#2C6E9E',text:'#20567c',ratio:false}
+};
+var HOLGORDER=['u5','s8','s8p'];
+var HOLDOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+var HOLDOWFULL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+function defaultHoliday(){ return { start:'2026-07-20', weeks:7, cap:null,
+  closed:['2026-08-24','2026-08-25','2026-08-26','2026-08-27','2026-08-28','2026-08-31'],
+  labels:{'2026-07-22':'Last day of school','2026-08-31':'Bank Holiday','2026-09-03':'Back to school / funding'},
+  sel:{} }; }
+function ensureModel(){ if(!data.holiday||typeof data.holiday!=='object') data.holiday=defaultHoliday();
+  var H=data.holiday; if(!H.start)H.start='2026-07-20'; if(!H.weeks)H.weeks=7; if(!('cap' in H))H.cap=null;
+  if(!Array.isArray(H.closed))H.closed=[]; if(!H.labels)H.labels={}; if(!H.sel)H.sel={};
+  (data.children||[]).forEach(function(c){ if(!Array.isArray(c.log))c.log=[]; if(!('lastConfirmed' in c))c.lastConfirmed=''; }); }
+function holIsoAdd(iso,n){ var d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+function holDow(iso){ return new Date(iso+'T00:00:00').getDay(); }
+function holUK(iso){ var p=iso.split('-'); return parseInt(p[2],10)+'/'+parseInt(p[1],10); }
+function holWeeks(){ var H=data.holiday, w=[]; for(var i=0;i<H.weeks;i++){ var wk=[]; for(var d=0;d<5;d++) wk.push(holIsoAdd(H.start,i*7+d)); w.push(wk);} return w; }
+function holAllDays(){ return holWeeks().reduce(function(a,w){return a.concat(w);},[]); }
+function holClosed(iso){ return data.holiday.closed.indexOf(iso)>=0; }
+function holLabel(iso){ return data.holiday.labels[iso]||''; }
+function holGroupId(c,iso){ var b=bandOf(c,iso); if(b==='Over 8s') return 's8p'; if(b==='Under 8s') return 's8'; return 'u5'; }
+function holSel(cid){ if(!data.holiday.sel[cid]) data.holiday.sel[cid]={}; return data.holiday.sel[cid]; }
+function holToggle(cid,iso,on){ var s=holSel(cid); if(on)s[iso]=true; else delete s[iso]; persist(); markDirty(); }
+function holChildDays(cid){ var s=data.holiday.sel[cid]||{}; return holAllDays().filter(function(iso){return !holClosed(iso)&&s[iso];}).length; }
+function holWeekAll(cid,wi,on){ var wk=holWeeks()[wi], s=holSel(cid); wk.forEach(function(iso){ if(holClosed(iso))return; if(on)s[iso]=true; else delete s[iso]; }); persist(); markDirty(); renderHol(); }
+function holDayCounts(iso){ var c={u5:0,s8:0,s8p:0}; (data.children||[]).forEach(function(ch){ if((data.holiday.sel[ch.id]||{})[iso]) c[holGroupId(ch,iso)]++; }); return c; }
+function holInRatio(c){ return c.u5+c.s8; }
+function holTotal(c){ return c.u5+c.s8+c.s8p; }
+function holDot(id){ var g=HOLG[id]; return '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+g.line+';margin-right:6px;vertical-align:middle"></span>'; }
+function holLegend(){ return '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;margin:4px 0 8px">'+
+  HOLGORDER.map(function(id){ var g=HOLG[id]; return '<span style="display:inline-block;padding:2px 9px;border-radius:20px;border:1px solid '+g.line+';background:'+g.fill+';color:'+g.text+';font-weight:700">'+holDot(id)+esc(g.label)+(g.ratio?'':' (not in ratio)')+'</span>'; }).join('')+
+  '<span style="color:var(--grey)">In ratio = green plus orange.</span></div>'; }
+function holTabBtn(name,label){ return '<button class="'+(HOL.view===name?'primary':'ghost')+'" onclick="HOL.view=\''+name+'\';renderHol()">'+label+'</button>'; }
+function openHolidayPlanner(){ ensureModel(); if(!HOL.view)HOL.view='enter'; renderHol(); }
+function renderHol(){
+  var m=document.getElementById('formMount');
+  var body = HOL.view==='setup' ? holSetup() : holEnter();
+  m.innerHTML='<div class="formcard"><h2>Holiday planner</h2>'+
+    '<p style="color:var(--grey);font-size:13px;margin-top:0">Tick the days each child needs over the holidays. Their colour group and contracted hours come from their record; you only choose the days.</p>'+
+    holLegend()+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0 14px">'+
+      holTabBtn('enter','Enter days')+holTabBtn('setup','Dates &amp; closed days')+
+      '<span class="spacer"></span>'+
+      '<button class="primary" onclick="generate(\'holiday\')">Generate overview</button>'+
+    '</div>'+ body +
+    '<div class="formactions" style="margin-top:14px"><button class="ghost" onclick="closeForm()">Close</button></div></div>';
+  m.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function holEnter(){
+  var kids=(data.children||[]).slice().sort(function(a,b){return fullName(a).localeCompare(fullName(b));});
+  if(!kids.length) return '<div class="empty">No children in the record yet. Add children first, then tick their holiday days here.</div>';
+  var list=kids.map(function(c){ var id=holGroupId(c), g=HOLG[id], sel=c.id===HOL.childId;
+    return '<button onclick="HOL.childId=\''+c.id+'\';renderHol()" style="display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;width:100%;margin-bottom:6px;border-left:5px solid '+g.line+';'+(sel?'background:'+g.fill+';':'')+'"><span>'+holDot(id)+esc(fullName(c))+'</span><span style="font-size:11px;color:var(--grey)">'+holChildDays(c.id)+'d</span></button>';
+  }).join('');
+  var c=(data.children||[]).find(function(x){return x.id===HOL.childId;}), right;
+  if(!c){ right='<div class="empty">Pick a child on the left to tick their days.</div>'; }
+  else{
+    var att=attendsOf(c), id=holGroupId(c);
+    right='<div style="margin-bottom:6px"><strong>'+holDot(id)+esc(fullName(c))+'</strong> <span style="font-size:12px;color:var(--grey)">'+esc(HOLG[id].label)+(att?'  ·  contracted '+esc(att):'')+'</span></div>'+holGridFor(c);
+  }
+  return '<div style="display:flex;gap:18px;flex-wrap:wrap"><div style="flex:0 0 250px;min-width:210px;max-height:470px;overflow:auto">'+list+'</div><div style="flex:1;min-width:300px">'+right+'</div></div>';
+}
+function holGridFor(c){
+  var s=data.holiday.sel[c.id]||{};
+  return holWeeks().map(function(wk,wi){
+    var cells=wk.map(function(iso){
+      var lbl=holLabel(iso);
+      var head='<div style="font-size:10px;text-transform:uppercase;color:var(--grey)">'+HOLDOWFULL[holDow(iso)]+'</div><div style="font-weight:700">'+holUK(iso)+'</div>'+(lbl?'<div style="font-size:10px;color:var(--gold);font-weight:700">'+esc(lbl)+'</div>':'');
+      if(holClosed(iso)) return '<td style="background:#eef2ea;color:#9aa39c;vertical-align:top;text-align:left">'+head+'<div style="font-size:11px;margin-top:4px">Closed</div></td>';
+      return '<td style="vertical-align:top;text-align:left">'+head+'<label style="display:flex;gap:5px;align-items:center;margin-top:6px;text-transform:none;font-weight:400;font-size:12px"><input type="checkbox" '+(s[iso]?'checked':'')+' onchange="holToggle(\''+c.id+'\',\''+iso+'\',this.checked);renderHol()"> in</label></td>';
+    }).join('');
+    return '<div style="font-size:12px;color:var(--green);font-weight:700;margin:8px 0 3px">Week '+(wi+1)+' · '+holUK(wk[0])+' to '+holUK(wk[4])+'</div>'+
+      '<table class="htable"><tr>'+cells+'</tr></table>'+
+      '<div style="margin:3px 0 6px"><button class="ghost" style="padding:4px 8px;font-size:12px" onclick="holWeekAll(\''+c.id+'\','+wi+',true)">Tick week</button> <button class="ghost" style="padding:4px 8px;font-size:12px" onclick="holWeekAll(\''+c.id+'\','+wi+',false)">Clear week</button></div>';
+  }).join('');
+}
+function holSetup(){
+  var H=data.holiday;
+  var days=holWeeks().map(function(wk,wi){
+    return '<div style="font-weight:700;color:var(--green);margin:10px 0 4px">Week '+(wi+1)+'</div>'+wk.map(function(iso){
+      return '<div style="display:grid;grid-template-columns:120px 92px 1fr;gap:8px;align-items:center;padding:4px 0;border-bottom:1px dashed var(--line)"><span style="font-weight:700">'+HOLDOW[holDow(iso)]+' '+holUK(iso)+'</span>'+
+        '<label style="text-transform:none;font-weight:400;font-size:12px;display:flex;gap:5px;align-items:center"><input type="checkbox" '+(holClosed(iso)?'checked':'')+' onchange="holToggleClosed(\''+iso+'\',this.checked)"> Closed</label>'+
+        '<input type="text" value="'+esc(holLabel(iso))+'" placeholder="label (optional)" onchange="holSetLabel(\''+iso+'\',this.value)"></div>';
+    }).join('');
+  }).join('');
+  return '<div class="grid">'+
+    '<div class="field"><label for="hol_start">First Monday of the holidays</label><input type="date" id="hol_start" value="'+esc(H.start)+'"></div>'+
+    '<div class="field"><label for="hol_weeks">Number of weeks</label><input type="number" id="hol_weeks" min="1" max="14" value="'+H.weeks+'"></div>'+
+    '<div class="field"><label for="hol_cap">Max in-ratio children per day</label><input type="number" id="hol_cap" min="0" value="'+(H.cap==null?'':H.cap)+'" placeholder="optional"></div>'+
+    '<div class="field" style="align-self:end"><button class="primary" onclick="holApplyDates()">Update dates</button></div>'+
+    '</div><div class="subhead">Closed days and labels</div>'+days;
+}
+function holApplyDates(){ var H=data.holiday; H.start=v('hol_start')||H.start; var w=parseInt(v('hol_weeks'),10);
+  H.weeks=Math.min(Math.max(w||7,1),14); var cap=v('hol_cap'); H.cap=cap===''?null:Math.max(0,parseInt(cap,10)||0);
+  persist(); markDirty(); renderHol(); }
+function holToggleClosed(iso,on){ var a=data.holiday.closed, i=a.indexOf(iso); if(on){ if(i<0)a.push(iso); } else if(i>=0)a.splice(i,1); persist(); markDirty(); renderHol(); }
+function holSetLabel(iso,val){ val=(val||'').trim(); if(val)data.holiday.labels[iso]=val; else delete data.holiday.labels[iso]; persist(); markDirty(); }
+function buildHolidayDocHTML(){
+  ensureModel(); var H=data.holiday, cap=H.cap;
+  var rev=document.getElementById('reviewedInput').value;
+  var totalCD=0, peak=0, peakDay=null, uniq={};
+  holAllDays().forEach(function(iso){ if(holClosed(iso))return; var c=holDayCounts(iso); totalCD+=holTotal(c); var ir=holInRatio(c);
+    if(ir>peak){peak=ir;peakDay=iso;} (data.children||[]).forEach(function(ch){ if((data.holiday.sel[ch.id]||{})[iso]) uniq[ch.id]=1; }); });
+  var h='<div class="brand">Little Puddings</div>'+
+    '<h1 class="title">Holiday care plan</h1>'+
+    '<div class="docsub">Summer '+esc(H.start.slice(0,4))+', who is in each day and the ratio numbers</div>'+
+    '<p class="reviewed">Prepared: '+esc(fmtDate(rev||todayISO()))+' &nbsp;·&nbsp; Confidential</p>'+
+    '<p style="font-size:13px"><strong>'+Object.keys(uniq).length+'</strong> children need care &nbsp;·&nbsp; busiest ratio day <strong>'+peak+'</strong>'+(peakDay?' ('+holUK(peakDay)+')':'')+' &nbsp;·&nbsp; <strong>'+totalCD+'</strong> child-days booked'+(cap?' &nbsp;·&nbsp; ratio max '+cap+' per day':'')+'</p>'+
+    holLegend();
+  holWeeks().forEach(function(wk,wi){
+    h+='<div class="bandhead" style="background:#1A7A4A">Week '+(wi+1)+' · '+holUK(wk[0])+' to '+holUK(wk[4])+'</div>';
+    h+='<table class="htable"><thead><tr><th>Day</th><th>In ratio</th><th>Under 5</th><th>School &lt;8</th><th>School 8+</th><th>Total</th><th>Children</th></tr></thead><tbody>';
+    wk.forEach(function(iso){
+      var lbl=holLabel(iso);
+      if(holClosed(iso)){ h+='<tr><td><strong>'+HOLDOW[holDow(iso)]+'</strong> '+holUK(iso)+(lbl?'<br><span style="font-size:10px">'+esc(lbl)+'</span>':'')+'</td><td colspan="6" style="color:#9aa39c">Closed</td></tr>'; return; }
+      var cnt=holDayCounts(iso), ir=holInRatio(cnt), over=cap&&ir>cap;
+      var names=(data.children||[]).filter(function(ch){return (data.holiday.sel[ch.id]||{})[iso];}).sort(function(a,b){return fullName(a).localeCompare(fullName(b));})
+        .map(function(ch){ return holDot(holGroupId(ch,iso))+esc(fullName(ch)); }).join(', ');
+      h+='<tr><td><strong>'+HOLDOW[holDow(iso)]+'</strong> '+holUK(iso)+(lbl?'<br><span style="font-size:10px;color:#D4A017">'+esc(lbl)+'</span>':'')+'</td>'+
+        '<td style="font-weight:700'+(over?';color:#A13A2A':'')+'">'+ir+(over?' (over)':'')+'</td>'+
+        '<td>'+cnt.u5+'</td><td>'+cnt.s8+'</td><td>'+cnt.s8p+'</td><td>'+holTotal(cnt)+'</td>'+
+        '<td style="font-size:12px">'+(names||'<span class="anone">Nobody</span>')+'</td></tr>';
+    });
+    h+='</tbody></table>';
+  });
+  h+='<div class="docfoot"><span>Little Puddings, Lincoln LN6 0UL</span><span>In ratio = under 5s plus school children under 8</span></div>';
+  return h;
+}
+
+/* ================= PARENT REVIEWS ================= */
+var REVIEW_MONTHS=6;
+function reviewOverdue(c){ if(!c || !c.lastConfirmed) return true; return new Date() > new Date(addMonthsISO(c.lastConfirmed,REVIEW_MONTHS)+'T23:59:59'); }
+function openReviews(){ ensureModel(); var m=document.getElementById('formMount');
+  var kids=(data.children||[]).slice().sort(function(a,b){ var la=a.lastConfirmed||'', lb=b.lastConfirmed||'';
+    if(!la&&lb)return -1; if(la&&!lb)return 1; return la.localeCompare(lb); });
+  var overdueN=kids.filter(reviewOverdue).length;
+  var rows=kids.map(function(c){ var od=reviewOverdue(c), last=c.lastConfirmed?fmtDate(c.lastConfirmed):'Never confirmed';
+    return '<tr><td><b>'+esc(fullName(c))+'</b></td><td>'+esc(last)+'</td>'+
+      '<td>'+(od?'<span class="bandpill" style="background:#A13A2A">Overdue</span>':'<span class="bandpill" style="background:#1A7A4A">Up to date</span>')+'</td>'+
+      '<td><div class="rowact"><button class="ghost" onclick="reviewConfirm(\''+c.id+'\')">Confirmed today</button>'+
+      '<input type="date" value="'+esc(c.lastConfirmed||'')+'" onchange="reviewSet(\''+c.id+'\',this.value)" style="padding:5px 8px"></div></td></tr>';
+  }).join('');
+  m.innerHTML='<div class="formcard"><h2>Parent reviews</h2>'+
+    '<p style="color:var(--grey);font-size:13px;margin-top:0">Details and contracts go to parents to confirm twice a year. This flags anyone not confirmed within '+REVIEW_MONTHS+' months. Mark a child confirmed when their updated form comes back.</p>'+
+    '<p style="margin:6px 0"><strong>'+overdueN+'</strong> of '+kids.length+' need confirming.</p>'+
+    '<div class="formactions" style="margin:6px 0"><button class="primary" onclick="generate(\'record\')">Generate record forms to send</button></div>'+
+    (kids.length ? '<table><thead><tr><th>Child</th><th>Last confirmed</th><th>Status</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>' : '<div class="empty">No children yet.</div>')+
+    '<div class="formactions" style="margin-top:14px"><button class="ghost" onclick="closeForm()">Close</button></div></div>';
+  m.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function reviewConfirm(id){ var c=(data.children||[]).find(function(x){return x.id===id;}); if(!c)return;
+  c.lastConfirmed=todayISO(); c.log=c.log||[]; c.log.push({date:todayISO(),note:'Confirmed by parent'}); if(c.log.length>20)c.log=c.log.slice(-20);
+  persist(); markDirty(); renderLists(); openReviews(); }
+function reviewSet(id,val){ var c=(data.children||[]).find(function(x){return x.id===id;}); if(!c)return;
+  c.lastConfirmed=val||''; persist(); markDirty(); renderLists(); openReviews(); }
+
+/* ================= ACCESS GATE (manager / deputy PIN) ================= */
+var unlocked=false, emergencyOnly=false;
+var DEFAULT_MANAGER_HASH='7c7ba51d';
+var DEFAULT_DEPUTY_HASH='7c795ed9';
+function pinHash(s){ var h=5381; for(var i=0;i<s.length;i++){ h=((h*33)+s.charCodeAt(i))>>>0; } return h.toString(16); }
+function currentPinHash(role){ var s=data.settings||{};
+  if(role==='deputy') return s.deputyPinHash || DEFAULT_DEPUTY_HASH;
+  return s.pinHash || DEFAULT_MANAGER_HASH; }
+function lockApp(){ unlocked=false; emergencyOnly=false;
+  document.getElementById('preview').style.display='none';
+  document.getElementById('manager').style.display='none';
+  var g=document.getElementById('gate'); g.style.display='flex';
+  var pin=document.getElementById('gatePin'); if(pin) pin.value='';
+  var err=document.getElementById('gateErr'); if(err) err.textContent='';
+  window.scrollTo(0,0);
+}
+function unlockManager(){ unlocked=true; emergencyOnly=false;
+  document.getElementById('gate').style.display='none'; showManager(); }
+function tryUnlock(){ var p=(document.getElementById('gatePin').value||'').trim();
+  if(!p) return;
+  var h=pinHash(p);
+  if(h===currentPinHash('manager')){ unlockManager(); }
+  else if(h===currentPinHash('deputy')){ openEmergencyPublic(); }
+  else { document.getElementById('gateErr').textContent='That PIN was not recognised.';
+    var el=document.getElementById('gatePin'); el.value=''; el.focus(); } }
+function openEmergencyPublic(){ emergencyOnly=true; unlocked=false;
+  document.getElementById('gate').style.display='none';
+  currentDoc='emergency'; currentChildId=null;
+  document.getElementById('manager').style.display='none';
+  document.getElementById('preview').style.display='block';
+  window.scrollTo(0,0); renderDoc(); updatePreviewBar(); }
+function previewBack(){ if(emergencyOnly) lockApp(); else showManager(); }
+function updatePreviewBar(){
+  var ctrls=document.getElementById('previewMgrCtrls');
+  var back=document.getElementById('previewBackBtn');
+  if(ctrls) ctrls.style.display = emergencyOnly ? 'none' : 'flex';
+  if(back) back.textContent = emergencyOnly ? '\u2039 Lock' : '\u2039 Back to data';
+}
+function openPins(){ ensureModel(); var m=document.getElementById('formMount');
+  m.innerHTML='<div class="formcard"><h2>PINs</h2>'+
+    '<p style="color:var(--grey);font-size:13px;margin-top:0">The <strong>manager PIN</strong> opens the full hub. The <strong>deputy PIN</strong> opens the emergency contact details only. Leave a box blank to keep that PIN as it is. Changes apply on both laptops once you Save to OneDrive.</p>'+
+    '<div class="grid">'+
+      '<div class="field"><label for="pin_mgr">New manager PIN (4 to 8 digits)</label><input id="pin_mgr" inputmode="numeric" maxlength="8" placeholder="leave blank to keep"></div>'+
+      '<div class="field"><label for="pin_dep">New deputy PIN (4 to 8 digits)</label><input id="pin_dep" inputmode="numeric" maxlength="8" placeholder="leave blank to keep"></div>'+
+    '</div>'+
+    '<div class="formactions"><button class="primary" onclick="savePins()">Save PINs</button><button class="ghost" onclick="closeForm()">Cancel</button></div></div>';
+  m.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function savePins(){ var mgr=v('pin_mgr'), dep=v('pin_dep');
+  if(!mgr && !dep){ closeForm(); return; }
+  if(mgr && !/^[0-9]{4,8}$/.test(mgr)){ alert('The manager PIN must be 4 to 8 digits.'); return; }
+  if(dep && !/^[0-9]{4,8}$/.test(dep)){ alert('The deputy PIN must be 4 to 8 digits.'); return; }
+  if(mgr && dep && mgr===dep){ alert('The manager and deputy PINs must be different.'); return; }
+  data.settings=data.settings||{};
+  if(mgr) data.settings.pinHash=pinHash(mgr);
+  if(dep) data.settings.deputyPinHash=pinHash(dep);
+  persist(); markDirty(); closeForm();
+  alert('PINs updated. Save to OneDrive so both laptops use them.');
+}
+
+/* ---------- init ---------- */
+loadLS(); ensureModel(); renderLists(); lockApp();
+</script>
+</body>
+</html>
