@@ -80,7 +80,7 @@
   .formactions{display:flex;gap:10px;margin-top:18px}
   .agehint{font-size:12px;color:var(--grey);font-style:italic}
   .days{grid-column:1/-1;border:1px solid var(--line);border-radius:8px;padding:6px 12px;background:#fff}
-  .dayrow{display:grid;grid-template-columns:1fr 120px 120px;gap:12px;align-items:center;padding:4px 0;border-bottom:1px dashed var(--line)}
+  .dayrow{display:grid;grid-template-columns:1fr 92px 92px 92px 92px;gap:10px;align-items:center;padding:4px 0;border-bottom:1px dashed var(--line)}
   .dayrow:last-child{border-bottom:none}
   .dayrow.hdr{font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--grey);font-weight:700}
   .dayrow label{display:flex;align-items:center;gap:8px;text-transform:none;font-weight:400;font-size:14px;color:var(--ink)}
@@ -203,6 +203,7 @@
       <button class="ghost" onclick="openAvailability()">Availability</button>
       <button class="ghost" onclick="openHolidayPlanner()">Holiday planner</button>
       <button class="ghost" onclick="openReviews()">Reviews</button>
+      <button class="ghost" onclick="openChecklist()">Checklists</button>
       <button class="ghost" onclick="openSettings()">Fees &amp; terms</button>
       <button class="ghost" onclick="openOneDrive()">OneDrive</button>
       <span class="spacer"></span>
@@ -306,20 +307,25 @@ function dayRow(day, rec){
   return '<div class="dayrow'+(on?'':' off')+'">'+
     '<label><input type="checkbox" id="f_on_'+ab+'" '+(on?'checked':'')+' onchange="this.closest(\'.dayrow\').classList.toggle(\'off\',!this.checked)"> '+day+'</label>'+
     '<input type="time" id="f_from_'+ab+'" value="'+esc(rec.from||'')+'">'+
-    '<input type="time" id="f_to_'+ab+'" value="'+esc(rec.to||'')+'"></div>';
+    '<input type="time" id="f_to_'+ab+'" value="'+esc(rec.to||'')+'">'+
+    '<input type="time" id="f_from2_'+ab+'" value="'+esc(rec.from2||'')+'">'+
+    '<input type="time" id="f_to2_'+ab+'" value="'+esc(rec.to2||'')+'"></div>';
 }
 function fmtTime(t){ if(!t) return ''; const p=t.split(':'); return parseInt(p[0],10)+'.'+(p[1]||'00'); }
+function block1(a){ return (a&&(a.from||a.to)) ? fmtTime(a.from)+(a.to?'–'+fmtTime(a.to):'') : ''; }
+function block2(a){ return (a&&(a.from2||a.to2)) ? fmtTime(a.from2)+(a.to2?'–'+fmtTime(a.to2):'') : ''; }
 function attendsText(att){
   if(!att||!att.length) return '';
   const items=att.slice().sort((a,b)=>DAYS.indexOf(a.day)-DAYS.indexOf(b.day));
   const groups=[];
   items.forEach(it=>{ const last=groups[groups.length-1];
-    if(last && last.from===it.from && last.to===it.to && DAYS.indexOf(it.day)===DAYS.indexOf(last.days[last.days.length-1])+1) last.days.push(it.day);
-    else groups.push({days:[it.day],from:it.from,to:it.to}); });
+    if(last && last.from===it.from && last.to===it.to && (last.from2||'')===(it.from2||'') && (last.to2||'')===(it.to2||'') && DAYS.indexOf(it.day)===DAYS.indexOf(last.days[last.days.length-1])+1) last.days.push(it.day);
+    else groups.push({days:[it.day],from:it.from,to:it.to,from2:it.from2,to2:it.to2}); });
   return groups.map(g=>{
     const label = g.days.length>1 ? (g.days[0]+' – '+g.days[g.days.length-1]) : g.days[0];
-    const time = (g.from||g.to) ? (' '+fmtTime(g.from)+(g.to?'–'+fmtTime(g.to):'')) : '';
-    return label+time; }).join(', ');
+    const t1 = block1(g) ? (' '+block1(g)) : '';
+    const t2 = block2(g) ? (' & '+block2(g)) : '';
+    return label+t1+t2; }).join(', ');
 }
 function attendsOf(c){ const t=attendsText(c.attendance); return t || c.attends || ''; }
 function hasAllergyInfo(c){ return !!(c.allergies||c.dietary||c.alert); }
@@ -466,7 +472,8 @@ function childForm(c,editing){
      fld('f_ec2name','Contact name',c.ec2name)+
      fld('f_ec2phone','Contact number',c.ec2phone,'tel')+
      '<div class="subhead">Attendance</div>'+
-     '<div class="days"><div class="dayrow hdr"><span>Day</span><span>From</span><span>To</span></div>'+
+     '<div class="field full"><span class="agehint">Tick each day and set the times. Use the second pair of times only for children who come in two blocks, such as before and after school (for example 7.30 to 8.55, then 15.25 to 17.00). Leave it blank for full-day children.</span></div>'+
+     '<div class="days"><div class="dayrow hdr"><span>Day</span><span>From</span><span>To</span><span>Then from</span><span>To</span></div>'+
        DAYS.map(d=>dayRow(d, (c.attendance||[]).find(a=>a.day===d))).join('')+'</div>'+
      '<div class="subhead">School</div>'+
      '<div class="field full"><label style="display:flex;align-items:center;gap:8px;text-transform:none;font-weight:400;color:var(--ink)"><input type="checkbox" id="f_atschool" '+(c.atSchool?'checked':'')+'> At school (places the child in the Under 8s or Over 8s band, even if under 5)</label></div>'+
@@ -503,6 +510,10 @@ function staffForm(s,editing){
      fld('f_nokrel','Relationship',s.nokrel)+
      fld('f_nokphone','Phone',s.nokphone,'tel')+
      '<div class="field"></div>'+
+     '<div class="subhead">Working hours</div>'+
+     '<div class="field full"><span class="agehint">Tick each working day and set the times. Use the second pair only for a split shift, such as a morning block and a later block on the same day.</span></div>'+
+     '<div class="days"><div class="dayrow hdr"><span>Day</span><span>From</span><span>To</span><span>Then from</span><span>To</span></div>'+
+       DAYS.map(d=>dayRow(d, (s.hours||[]).find(a=>a.day===d))).join('')+'</div>'+
      '<div class="field full"><label for="f_medication">Current medication (optional)</label><input id="f_medication" value="'+esc(s.medication||'')+'"></div>'+
      '<div class="field full"><label for="f_emergency">Emergency contacts</label><textarea id="f_emergency" placeholder="Name and phone, one per line">'+esc(s.emergency||'')+'</textarea></div>'+
      '<div class="field full"><label for="f_children">Their own children (optional)</label><textarea id="f_children" placeholder="Names, schools, year groups">'+esc(s.childrenNote||'')+'</textarea></div>'+
@@ -520,7 +531,7 @@ function saveChild(){
     c1label:v('f_c1label'), c1name:v('f_c1name'), c1mobile:v('f_c1mobile'), c1work:v('f_c1work'), c1workphone:v('f_c1workphone'), c1email:v('f_c1email'),
     c2label:v('f_c2label'), c2name:v('f_c2name'), c2mobile:v('f_c2mobile'), c2work:v('f_c2work'), c2workphone:v('f_c2workphone'), c2email:v('f_c2email'),
     attendance: DAYS.filter(d=>{const e=document.getElementById('f_on_'+d.slice(0,3));return e&&e.checked;})
-        .map(d=>({day:d, from:v('f_from_'+d.slice(0,3)), to:v('f_to_'+d.slice(0,3))})),
+        .map(d=>{const ab=d.slice(0,3);return {day:d, from:v('f_from_'+ab), to:v('f_to_'+ab), from2:v('f_from2_'+ab), to2:v('f_to2_'+ab)};}),
     atSchool:(document.getElementById('f_atschool')||{}).checked||false,
     school:v('f_school'), schoolphone:v('f_schoolphone'), start:v('f_start'), leave:v('f_leave'), funding:v('f_funding'),
     fees: FEE_ROWS.filter(r=>!r.standard && (document.getElementById('f_fee_'+r.key)||{}).checked).map(r=>r.key),
@@ -536,6 +547,8 @@ function saveChild(){
 function saveStaff(){
   const rec={ id:v('f_id')||uid(), type:'staff',
     name:v('f_name'), role:v('f_role'), nok:v('f_nok'), nokrel:v('f_nokrel'), nokphone:v('f_nokphone'),
+    hours: DAYS.filter(d=>{const e=document.getElementById('f_on_'+d.slice(0,3));return e&&e.checked;})
+        .map(d=>{const ab=d.slice(0,3);return {day:d, from:v('f_from_'+ab), to:v('f_to_'+ab), from2:v('f_from2_'+ab), to2:v('f_to2_'+ab)};}),
     medication:v('f_medication'), emergency:v('f_emergency'), childrenNote:v('f_children') };
   if(!rec.name){ alert('Please enter a name.'); return; }
   upsert('staff',rec); closeForm();
@@ -754,8 +767,9 @@ function recordCarer(c,n){
 function hoursTable(c){
   const att=c.attendance||[];
   const days=['Monday','Tuesday','Wednesday','Thursday','Friday'].concat(['Saturday','Sunday'].filter(d=>att.find(a=>a.day===d)));
-  let h='<table class="htable"><tr><th>Day</th><th>From (am/pm)</th><th>To (am/pm)</th></tr>';
-  days.forEach(d=>{ const a=att.find(x=>x.day===d)||{}; h+='<tr><td>'+d+'</td><td>'+(a.from?fmtTime(a.from):'')+'</td><td>'+(a.to?fmtTime(a.to):'')+'</td></tr>'; });
+  const anySecond=att.some(a=>a.from2||a.to2);
+  let h='<table class="htable"><tr><th>Day</th><th>Session</th>'+(anySecond?'<th>Second session</th>':'')+'</tr>';
+  days.forEach(d=>{ const a=att.find(x=>x.day===d)||{}; h+='<tr><td>'+d+'</td><td>'+(block1(a)||'')+'</td>'+(anySecond?'<td>'+(block2(a)||'')+'</td>':'')+'</tr>'; });
   return h+'</table>';
 }
 function recordFormHTML(c){
@@ -810,10 +824,11 @@ function wordCarerRows(c,n){
 function wordHoursTable(c){
   const att=c.attendance||[];
   const days=['Monday','Tuesday','Wednesday','Thursday','Friday'].concat(['Saturday','Sunday'].filter(d=>att.find(a=>a.day===d)));
+  const anySecond=att.some(a=>a.from2||a.to2);
   const th='font-family:Arial;font-size:9pt;font-weight:bold;background:#E8F1EC;color:#1A7A4A;border:1pt solid #cccccc;padding:4px 8px;text-align:left';
   const td='font-family:Arial;font-size:10pt;border:1pt solid #cccccc;padding:4px 8px';
-  let h='<table width="60%" cellspacing="0" cellpadding="0" style="border-collapse:collapse"><tr><td style="'+th+'">Day</td><td style="'+th+'">From</td><td style="'+th+'">To</td></tr>';
-  days.forEach(d=>{ const a=att.find(x=>x.day===d)||{}; h+='<tr><td style="'+td+'">'+d+'</td><td style="'+td+'">'+(a.from?fmtTime(a.from):'')+'</td><td style="'+td+'">'+(a.to?fmtTime(a.to):'')+'</td></tr>'; });
+  let h='<table width="'+(anySecond?'75%':'60%')+'" cellspacing="0" cellpadding="0" style="border-collapse:collapse"><tr><td style="'+th+'">Day</td><td style="'+th+'">Session</td>'+(anySecond?'<td style="'+th+'">Second session</td>':'')+'</tr>';
+  days.forEach(d=>{ const a=att.find(x=>x.day===d)||{}; h+='<tr><td style="'+td+'">'+d+'</td><td style="'+td+'">'+(block1(a)||'')+'</td>'+(anySecond?'<td style="'+td+'">'+(block2(a)||'')+'</td>':'')+'</tr>'; });
   return h+'</table>';
 }
 function wordRecordForm(c){
@@ -886,6 +901,7 @@ function childHTML(c){
 function staffHTML(s){
   let h='<div class="staffblock">';
   h+='<div class="nameline"><span class="cname">'+esc((s.name||'').toUpperCase())+'</span><span class="dob">'+esc(s.role||'')+'</span></div>';
+  if(s.hours&&s.hours.length) h+='<div class="row"><span class="lbl">Working hours:</span><span>'+esc(attendsText(s.hours))+'</span><span class="ph"></span></div>';
   if(s.nok||s.nokphone) h+='<div class="row"><span class="lbl">Next of kin:</span><span>'+esc([s.nok,s.nokrel&&'('+s.nokrel+')'].filter(Boolean).join(' '))+'</span><span class="ph">'+esc(s.nokphone||'')+'</span></div>';
   if(s.medication) h+='<div class="row"><span class="lbl">Medication:</span><span>'+esc(s.medication)+'</span><span class="ph"></span></div>';
   if(s.emergency) s.emergency.split('\n').filter(x=>x.trim()).forEach(line=>{
@@ -921,6 +937,7 @@ function renderDoc(){ document.getElementById('document').innerHTML =
   currentDoc==='allergy' ? buildAllergyDocHTML() :
   currentDoc==='trip' ? buildTripDocHTML() :
   currentDoc==='holiday' ? buildHolidayDocHTML() :
+  currentDoc==='checklist' ? buildChecklistDocHTML() :
   currentDoc==='record' ? buildRecordDocHTML() : buildDocHTML(); }
 
 function allergyChildren(){
@@ -1111,6 +1128,7 @@ function wStaff(s){
   let h='<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:0 0 10px 0;border-left:3pt solid #6B6460">';
   h+='<tr><td colspan="2" style="font-family:Arial;font-size:11pt;font-weight:bold;padding:2px 4px">'+esc((s.name||'').toUpperCase())+'</td>'+
      '<td width="180" align="right" style="font-family:Georgia,serif;font-size:9.5pt;font-style:italic;color:#6B6460;padding:2px 4px">'+esc(s.role||'')+'</td></tr>';
+  if(s.hours&&s.hours.length) h+=wRow('Working hours:',attendsText(s.hours),'');
   if(s.nok||s.nokphone) h+=wRow('Next of kin:',[s.nok,s.nokrel&&'('+s.nokrel+')'].filter(Boolean).join(' '),s.nokphone);
   if(s.medication) h+=wRow('Medication:',s.medication,'');
   if(s.emergency) s.emergency.split('\n').filter(x=>x.trim()).forEach(l=>h+=wRow('Emergency:',l.trim(),''));
@@ -1133,6 +1151,7 @@ function downloadWord(){
   let inner, title;
   if(currentDoc==='allergy'){ inner=buildAllergyWordHTML(); title='Allergies and Dietary Requirements'; }
   else if(currentDoc==='trip'){ inner=buildTripWordHTML(); title='Trip Outing Register'; }
+  else if(currentDoc==='checklist'){ inner=buildChecklistWordHTML(); title=(data.checklist.title.trim()||'Children checklist'); }
   else if(currentDoc==='record'){ inner=buildRecordWordHTML();
     const c=currentChildId?data.children.find(x=>x.id===currentChildId):null;
     title = c ? ('Child Record Form, '+fullName(c)) : 'Child Record Forms'; }
@@ -1215,11 +1234,12 @@ function openOneDrive(){ var cfg=odCfg(); var m=document.getElementById('formMou
 
 /* ================= HOLIDAY PLANNER ================= */
 var HOLG={
+  u1 :{label:'Under 1 (max one)',       short:'Under 1',  fill:'#F9E2DE',line:'#C0392B',text:'#912018',ratio:true},
   u5 :{label:'Under 5',                short:'Under 5',  fill:'#E8F1EC',line:'#1A7A4A',text:'#155e39',ratio:true},
   s8 :{label:'School child, under 8',  short:'School <8',fill:'#FBE3CE',line:'#C15C1E',text:'#8f4415',ratio:true},
   s8p:{label:'School child, 8 or over',short:'School 8+',fill:'#DCEAF5',line:'#2C6E9E',text:'#20567c',ratio:false}
 };
-var HOLGORDER=['u5','s8','s8p'];
+var HOLGORDER=['u1','u5','s8','s8p'];
 var HOLDOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 var HOLDOWFULL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 function defaultHoliday(){ return { start:'2026-07-20', weeks:7, cap:null,
@@ -1231,23 +1251,26 @@ function ensureModel(){ if(!data.holiday||typeof data.holiday!=='object') data.h
   if(!Array.isArray(H.closed))H.closed=[]; if(!H.labels)H.labels={}; if(!H.sel)H.sel={};
   (data.children||[]).forEach(function(c){ if(!Array.isArray(c.log))c.log=[]; if(!('lastConfirmed' in c))c.lastConfirmed=''; });
   if(!data.trip||typeof data.trip!=='object') data.trip=defaultTrip();
-  var T=data.trip; ['date','destination','staff','ratio','transport','times','notes'].forEach(function(k){ if(!(k in T))T[k]=''; }); if(!T.sel)T.sel={}; }
+  var T=data.trip; ['date','destination','staff','ratio','transport','times','notes'].forEach(function(k){ if(!(k in T))T[k]=''; }); if(!T.sel)T.sel={};
+  if(!data.checklist||typeof data.checklist!=='object') data.checklist=defaultChecklist();
+  var CL=data.checklist; if(!('title' in CL))CL.title=''; if(!CL.order)CL.order='ageYoung'; if(!('showAge' in CL))CL.showAge=true; if(!('current' in CL))CL.current=true; if(!Array.isArray(CL.cols))CL.cols=['','','']; }
+function defaultChecklist(){ return {title:'', order:'ageYoung', showAge:true, current:true, cols:['','','']}; }
 function defaultTrip(){ return {date:'',destination:'',staff:'',ratio:'',transport:'',times:'',notes:'',sel:{}}; }
-function holIsoAdd(iso,n){ var d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
-function holDow(iso){ return new Date(iso+'T00:00:00').getDay(); }
+function holIsoAdd(iso,n){ var d=new Date(iso+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
+function holDow(iso){ return new Date(iso+'T00:00:00Z').getUTCDay(); }
 function holUK(iso){ var p=iso.split('-'); return parseInt(p[2],10)+'/'+parseInt(p[1],10); }
 function holWeeks(){ var H=data.holiday, w=[]; for(var i=0;i<H.weeks;i++){ var wk=[]; for(var d=0;d<5;d++) wk.push(holIsoAdd(H.start,i*7+d)); w.push(wk);} return w; }
 function holAllDays(){ return holWeeks().reduce(function(a,w){return a.concat(w);},[]); }
 function holClosed(iso){ return data.holiday.closed.indexOf(iso)>=0; }
 function holLabel(iso){ return data.holiday.labels[iso]||''; }
-function holGroupId(c,iso){ var b=bandOf(c,iso); if(b==='Over 8s') return 's8p'; if(b==='Under 8s') return 's8'; return 'u5'; }
+function holGroupId(c,iso){ var b=bandOf(c,iso); if(b==='Over 8s') return 's8p'; if(b==='Under 8s') return 's8'; if(b==='Under 1s') return 'u1'; return 'u5'; }
 function holSel(cid){ if(!data.holiday.sel[cid]) data.holiday.sel[cid]={}; return data.holiday.sel[cid]; }
 function holToggle(cid,iso,on){ var s=holSel(cid); if(on)s[iso]=true; else delete s[iso]; persist(); markDirty(); }
 function holChildDays(cid){ var s=data.holiday.sel[cid]||{}; return holAllDays().filter(function(iso){return !holClosed(iso)&&s[iso];}).length; }
 function holWeekAll(cid,wi,on){ var wk=holWeeks()[wi], s=holSel(cid); wk.forEach(function(iso){ if(holClosed(iso))return; if(on)s[iso]=true; else delete s[iso]; }); persist(); markDirty(); renderHol(); }
-function holDayCounts(iso){ var c={u5:0,s8:0,s8p:0}; (data.children||[]).forEach(function(ch){ if((data.holiday.sel[ch.id]||{})[iso]) c[holGroupId(ch,iso)]++; }); return c; }
-function holInRatio(c){ return c.u5+c.s8; }
-function holTotal(c){ return c.u5+c.s8+c.s8p; }
+function holDayCounts(iso){ var c={u1:0,u5:0,s8:0,s8p:0}; (data.children||[]).forEach(function(ch){ if((data.holiday.sel[ch.id]||{})[iso]) c[holGroupId(ch,iso)]++; }); return c; }
+function holInRatio(c){ return c.u1+c.u5+c.s8; }
+function holTotal(c){ return c.u1+c.u5+c.s8+c.s8p; }
 function holDot(id){ var g=HOLG[id]; return '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+g.line+';margin-right:6px;vertical-align:middle"></span>'; }
 function holLegend(){ return '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;margin:4px 0 8px">'+
   HOLGORDER.map(function(id){ var g=HOLG[id]; return '<span style="display:inline-block;padding:2px 9px;border-radius:20px;border:1px solid '+g.line+';background:'+g.fill+';color:'+g.text+';font-weight:700">'+holDot(id)+esc(g.label)+(g.ratio?'':' (not in ratio)')+'</span>'; }).join('')+
@@ -1331,15 +1354,16 @@ function buildHolidayDocHTML(){
     holLegend();
   holWeeks().forEach(function(wk,wi){
     h+='<div class="bandhead" style="background:#1A7A4A">Week '+(wi+1)+' · '+holUK(wk[0])+' to '+holUK(wk[4])+'</div>';
-    h+='<table class="htable"><thead><tr><th>Day</th><th>In ratio</th><th>Under 5</th><th>School &lt;8</th><th>School 8+</th><th>Total</th><th>Children</th></tr></thead><tbody>';
+    h+='<table class="htable"><thead><tr><th>Day</th><th>In ratio</th><th>Under 1</th><th>Under 5</th><th>School &lt;8</th><th>School 8+</th><th>Total</th><th>Children</th></tr></thead><tbody>';
     wk.forEach(function(iso){
       var lbl=holLabel(iso);
-      if(holClosed(iso)){ h+='<tr><td><strong>'+HOLDOW[holDow(iso)]+'</strong> '+holUK(iso)+(lbl?'<br><span style="font-size:10px">'+esc(lbl)+'</span>':'')+'</td><td colspan="6" style="color:#9aa39c">Closed</td></tr>'; return; }
-      var cnt=holDayCounts(iso), ir=holInRatio(cnt), over=cap&&ir>cap;
+      if(holClosed(iso)){ h+='<tr><td><strong>'+HOLDOW[holDow(iso)]+'</strong> '+holUK(iso)+(lbl?'<br><span style="font-size:10px">'+esc(lbl)+'</span>':'')+'</td><td colspan="7" style="color:#9aa39c">Closed</td></tr>'; return; }
+      var cnt=holDayCounts(iso), ir=holInRatio(cnt), over=cap&&ir>cap, u1over=cnt.u1>1;
       var names=(data.children||[]).filter(function(ch){return (data.holiday.sel[ch.id]||{})[iso];}).sort(function(a,b){return fullName(a).localeCompare(fullName(b));})
         .map(function(ch){ return holDot(holGroupId(ch,iso))+esc(fullName(ch)); }).join(', ');
       h+='<tr><td><strong>'+HOLDOW[holDow(iso)]+'</strong> '+holUK(iso)+(lbl?'<br><span style="font-size:10px;color:#D4A017">'+esc(lbl)+'</span>':'')+'</td>'+
         '<td style="font-weight:700'+(over?';color:#A13A2A':'')+'">'+ir+(over?' (over)':'')+'</td>'+
+        '<td style="font-weight:700;color:#C0392B">'+cnt.u1+(u1over?' (over)':'')+'</td>'+
         '<td>'+cnt.u5+'</td><td>'+cnt.s8+'</td><td>'+cnt.s8p+'</td><td>'+holTotal(cnt)+'</td>'+
         '<td style="font-size:12px">'+(names||'<span class="anone">Nobody</span>')+'</td></tr>';
     });
@@ -1434,6 +1458,80 @@ function savePins(){ var mgr=v('pin_mgr'), dep=v('pin_dep');
   if(dep) data.settings.deputyPinHash=pinHash(dep);
   persist(); markDirty(); closeForm();
   alert('PINs updated. Save to OneDrive so both laptops use them.');
+}
+
+/* ================= CHECKLISTS ================= */
+function clOrderLabel(o){ return o==='ageOld'?'Age order, oldest first':o==='first'?'First name A to Z':o==='surname'?'Surname A to Z':'Age order, youngest first'; }
+function clOrderChildren(){
+  var CL=data.checklist;
+  var kids=(data.children||[]).filter(function(c){ return CL.current ? onRoll(c) : true; });
+  var o=CL.order;
+  kids.sort(function(a,b){
+    if(o==='first') return fullName(a).localeCompare(fullName(b));
+    if(o==='surname') return (a.surname||'').localeCompare(b.surname||'') || (a.first||'').localeCompare(b.first||'');
+    var da=a.dob?new Date(a.dob).getTime():null, db=b.dob?new Date(b.dob).getTime():null;
+    if(da===null&&db===null) return fullName(a).localeCompare(fullName(b));
+    if(da===null) return 1; if(db===null) return -1;
+    return o==='ageOld' ? da-db : db-da;
+  });
+  return kids;
+}
+function clSet(k,val){ data.checklist[k]=val; persist(); markDirty(); }
+function clSetCol(i,val){ data.checklist.cols[i]=val; persist(); markDirty(); }
+function openChecklist(){ ensureModel(); renderChecklist(); }
+function renderChecklist(){
+  var m=document.getElementById('formMount'); var CL=data.checklist;
+  function opt(v,label){ return '<option value="'+v+'"'+(CL.order===v?' selected':'')+'>'+label+'</option>'; }
+  m.innerHTML='<div class="formcard"><h2>Checklists</h2>'+
+    '<p style="color:var(--grey);font-size:13px;margin-top:0">Make a tick-list of the children so you never miss anyone, for emails, headcounts, sun cream, consent and so on. It lists them in age order to match your pegs, and you can add up to three columns of your own.</p>'+
+    '<div class="grid">'+
+      '<div class="field full"><label for="cl_title">Title</label><input id="cl_title" value="'+esc(CL.title)+'" placeholder="e.g. Summer newsletter, Sun cream, Headcount" onchange="clSet(\'title\',this.value)"></div>'+
+      '<div class="field"><label for="cl_order">Order</label><select id="cl_order" onchange="clSet(\'order\',this.value);renderChecklist()">'+
+        opt('ageYoung','Age, youngest first')+opt('ageOld','Age, oldest first')+opt('first','First name A to Z')+opt('surname','Surname A to Z')+'</select></div>'+
+      '<div class="field"><label>Options</label>'+
+        '<label style="text-transform:none;font-weight:400;display:flex;gap:6px;align-items:center;font-size:14px;margin:2px 0"><input type="checkbox" '+(CL.showAge?'checked':'')+' onchange="clSet(\'showAge\',this.checked)"> Show age</label>'+
+        '<label style="text-transform:none;font-weight:400;display:flex;gap:6px;align-items:center;font-size:14px;margin:2px 0"><input type="checkbox" '+(CL.current?'checked':'')+' onchange="clSet(\'current\',this.checked);renderChecklist()"> Current children only</label>'+
+      '</div>'+
+    '</div>'+
+    '<div class="subhead">Your columns (optional)</div>'+
+    '<div class="grid">'+
+      [0,1,2].map(function(i){ return '<div class="field"><label for="cl_col'+i+'">Column '+(i+1)+'</label><input id="cl_col'+i+'" value="'+esc(CL.cols[i]||'')+'" placeholder="blank for a plain tick box" onchange="clSetCol('+i+',this.value)"></div>'; }).join('')+
+    '</div>'+
+    '<p style="color:var(--grey);font-size:12px">'+clOrderChildren().length+' children will be listed.</p>'+
+    '<div class="formactions" style="margin-top:8px"><button class="primary" onclick="generate(\'checklist\')">Generate checklist</button><button class="ghost" onclick="closeForm()">Close</button></div></div>';
+  m.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function buildChecklistDocHTML(){
+  ensureModel(); var CL=data.checklist; var kids=clOrderChildren();
+  var rev=document.getElementById('reviewedInput').value;
+  var cols=CL.cols.filter(function(c){return c.trim();}); if(!cols.length) cols=['\u2713'];
+  var title=CL.title.trim()||'Children checklist';
+  var h='<div class="brand">Little Puddings</div>'+
+    '<h1 class="title">'+esc(title)+'</h1>'+
+    '<div class="docsub">'+esc(clOrderLabel(CL.order))+(CL.current?', current children':'')+'</div>'+
+    '<p class="reviewed">'+esc(fmtDate(rev||todayISO()))+' &nbsp;&#183;&nbsp; '+kids.length+' children</p>';
+  if(!kids.length){ return h+'<p class="anone">No children to list.</p>'; }
+  h+='<table class="atable"><thead><tr><th style="width:34px">#</th><th>Child</th>'+(CL.showAge?'<th style="width:74px">Age</th>':'')+cols.map(function(c){return '<th style="width:92px;text-align:center">'+esc(c)+'</th>';}).join('')+'</tr></thead><tbody>';
+  kids.forEach(function(c,i){
+    h+='<tr><td>'+(i+1)+'</td><td class="an">'+esc(fullName(c))+'</td>'+(CL.showAge?'<td>'+esc(ageShort(c))+'</td>':'')+cols.map(function(){return '<td style="height:30px"></td>';}).join('')+'</tr>';
+  });
+  h+='</tbody></table><div class="docfoot"><span>Little Puddings, Lincoln LN6 0UL</span><span>Total: '+kids.length+' children</span></div>';
+  return h;
+}
+function buildChecklistWordHTML(){
+  ensureModel(); var CL=data.checklist; var kids=clOrderChildren();
+  var cols=CL.cols.filter(function(c){return c.trim();}); if(!cols.length) cols=['\u2713'];
+  var title=CL.title.trim()||'Children checklist';
+  var th='font-family:Arial;font-size:10pt;font-weight:bold;color:#1A7A4A;background:#E8F1EC;border:1pt solid #cccccc;padding:5px 8px;text-align:left';
+  var td='font-family:Arial;font-size:10pt;border:1pt solid #cccccc;padding:7px 8px';
+  var h='<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:11pt">Little Puddings</div>'+
+    '<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:22pt;margin:2px 0">'+esc(title)+'</div>'+
+    '<div style="font-family:Georgia,serif;font-style:italic;color:#6B6460;font-size:11pt;border-bottom:2pt solid #D4A017;padding-bottom:6px">'+esc(clOrderLabel(CL.order))+' &#160;&#183;&#160; '+kids.length+' children</div>';
+  if(!kids.length) return h+'<p style="font-family:Arial;color:#6B6460">No children to list.</p>';
+  h+='<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-top:10px"><tr><td width="6%" style="'+th+'">#</td><td style="'+th+'">Child</td>'+(CL.showAge?'<td width="12%" style="'+th+'">Age</td>':'')+cols.map(function(c){return '<td width="14%" style="'+th+';text-align:center">'+esc(c)+'</td>';}).join('')+'</tr>';
+  kids.forEach(function(c,i){ h+='<tr><td style="'+td+'">'+(i+1)+'</td><td style="'+td+';font-weight:bold">'+esc(fullName(c))+'</td>'+(CL.showAge?'<td style="'+td+'">'+esc(ageShort(c))+'</td>':'')+cols.map(function(){return '<td style="'+td+'">&#160;</td>';}).join('')+'</tr>'; });
+  h+='</table><div style="font-family:Arial;font-size:9pt;color:#6B6460;margin-top:10px">Total: '+kids.length+' children</div>';
+  return h;
 }
 
 /* ---------- init ---------- */
