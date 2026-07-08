@@ -163,6 +163,7 @@
     .doc{border:none;border-radius:0;padding:0;max-width:none;margin:0}
     .wrap{padding:0}
     .child,.staffblock{break-inside:avoid}
+    .recform + .recform{page-break-before:always;break-before:page;border-top:none;margin-top:0;padding-top:0}
     .bandhead{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .alert,.bandpill{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   }
@@ -198,7 +199,7 @@
       <button class="primary" onclick="generate('emergency')">Generate emergency document</button>
       <button class="primary" onclick="generate('allergy')">Generate allergy sheet</button>
       <button class="primary" onclick="generate('record')">Generate record forms</button>
-      <button class="primary" onclick="generate('trip')">Generate trip register</button>
+      <button class="primary" onclick="openTripPlanner()">Trip register</button>
       <button class="ghost" onclick="openAvailability()">Availability</button>
       <button class="ghost" onclick="openHolidayPlanner()">Holiday planner</button>
       <button class="ghost" onclick="openReviews()">Reviews</button>
@@ -983,12 +984,17 @@ function tripContactList(c){ var o=[];
   if(c.ec2name||c.ec2phone) o.push('Emergency: '+esc(((c.ec2name||'')+' '+(c.ec2phone||'')).trim()));
   return o; }
 function buildTripDocHTML(){
-  const list=tripChildrenSorted();
+  ensureModel(); var t=data.trip;
+  const sel=tripSelectedChildren();
+  const list = sel.length ? sel : tripChildrenSorted();
+  const allShown = sel.length===0;
   let h='<div class="brand">Little Puddings</div>'+
         '<h1 class="title">Trip / Outing Register</h1>'+
         '<div class="docsub">Take on every outing. Emergency contacts and allergies for each child.</div>'+
-        '<p class="reviewed" style="margin-top:8px">Date of outing: ____________________ &nbsp; Destination: ____________________________</p>'+
-        '<p class="reviewed" style="margin-top:2px">Staff attending: ____________________ &nbsp; Adults : children ratio: ____________</p>'+
+        '<p class="reviewed" style="margin-top:8px">'+tripDetail('Date of outing',t.date?fmtDate(t.date):'')+' &nbsp; '+tripDetail('Destination',t.destination)+'</p>'+
+        '<p class="reviewed" style="margin-top:2px">'+tripDetail('Staff attending',t.staff)+' &nbsp; '+tripDetail('Adults : children ratio',t.ratio)+'</p>'+
+        ((t.transport||t.times)?('<p class="reviewed" style="margin-top:2px">'+tripDetail('Transport',t.transport)+' &nbsp; '+tripDetail('Times',t.times)+'</p>'):'')+
+        (t.notes?('<p class="reviewed" style="margin-top:2px">'+tripDetail('Notes',t.notes)+'</p>'):'')+
         '<p class="reviewed" style="margin-top:6px">Headcounts (tick and note time): Before leaving \u2610 ______ &nbsp; On arrival \u2610 ______ &nbsp; Before return \u2610 ______ &nbsp; Back at setting \u2610 ______</p>';
   if(!list.length){ h+='<p class="anone">No children added yet.</p>'; }
   else{
@@ -1000,18 +1006,23 @@ function buildTripDocHTML(){
         '<td>'+(con.length?con.join('<br>'):'<span class="anone">No contact recorded</span>')+'</td>'+
         '<td>'+(tripMedical(c)?esc(tripMedical(c)):'<span class="anone">None</span>')+'</td></tr>'; }).join('')+
       '</tbody></table>'+
-      '<p class="reviewed" style="margin-top:12px">Children listed: '+list.length+'. Tick each child on and count them at every headcount. Keep this sheet with you throughout the outing.</p>';
+      '<p class="reviewed" style="margin-top:12px">Children on this outing: '+list.length+(allShown?' (all children shown, none were ticked in the trip planner)':'')+'. Tick each child on and count them at every headcount. Keep this sheet with you throughout the outing.</p>';
   }
   h+='<div class="docfoot"><span>Little Puddings, Lincoln LN6 0UL</span><span>Confidential, contains personal data</span></div>';
   return h;
 }
 function buildTripWordHTML(){
-  const list=tripChildrenSorted();
+  ensureModel(); var t=data.trip;
+  const sel=tripSelectedChildren();
+  const list = sel.length ? sel : tripChildrenSorted();
+  function wd(l,v){ return esc(l)+': '+(v?v:'____________________'); }
   let h='<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:11pt">Little Puddings</div>'+
         '<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:22pt;margin:2px 0">Trip / Outing Register</div>'+
         '<div style="font-family:Georgia,serif;font-style:italic;color:#6B6460;font-size:11pt;border-bottom:2pt solid #D4A017;padding-bottom:6px">Take on every outing. Emergency contacts and allergies for each child.</div>'+
-        '<div style="font-family:Arial;font-size:10pt;margin:8px 0 2px">Date of outing: ____________________ &#160; Destination: ____________________________</div>'+
-        '<div style="font-family:Arial;font-size:10pt;margin:2px 0">Staff attending: ____________________ &#160; Adults : children ratio: ____________</div>'+
+        '<div style="font-family:Arial;font-size:10pt;margin:8px 0 2px">'+wd('Date of outing',t.date?esc(fmtDate(t.date)):'')+' &#160; '+wd('Destination',esc(t.destination))+'</div>'+
+        '<div style="font-family:Arial;font-size:10pt;margin:2px 0">'+wd('Staff attending',esc(t.staff))+' &#160; '+wd('Adults : children ratio',esc(t.ratio))+'</div>'+
+        ((t.transport||t.times)?('<div style="font-family:Arial;font-size:10pt;margin:2px 0">'+wd('Transport',esc(t.transport))+' &#160; '+wd('Times',esc(t.times))+'</div>'):'')+
+        (t.notes?('<div style="font-family:Arial;font-size:10pt;margin:2px 0">'+wd('Notes',esc(t.notes))+'</div>'):'')+
         '<div style="font-family:Arial;font-size:10pt;margin:6px 0 12px">Headcounts (tick and note time): Before leaving &#9744; ______ &#160; On arrival &#9744; ______ &#160; Before return &#9744; ______ &#160; Back at setting &#9744; ______</div>';
   if(!list.length){ h+='<p style="font-family:Arial;color:#6B6460;font-style:italic">No children added yet.</p>'; }
   else{
@@ -1026,10 +1037,41 @@ function buildTripWordHTML(){
         '<td style="'+td+'">'+(con.join('<br>'))+'</td>'+
         '<td style="'+td+'">'+esc(tripMedical(c))+'</td></tr>'; }).join('')+
       '</table>'+
-      '<div style="font-family:Arial;font-size:9pt;color:#6B6460;margin-top:10px">Children listed: '+list.length+'. Tick each child on and count them at every headcount. Keep this sheet with you throughout the outing.</div>';
+      '<div style="font-family:Arial;font-size:9pt;color:#6B6460;margin-top:10px">Children on this outing: '+list.length+'. Tick each child on and count them at every headcount. Keep this sheet with you throughout the outing.</div>';
   }
   h+='<div style="font-family:Arial;font-size:8.5pt;color:#6B6460;border-top:1pt solid #cccccc;margin-top:18px;padding-top:6px">Little Puddings, Lincoln LN6 0UL &#160;&#183;&#160; Confidential, contains personal data</div>';
   return h;
+}
+function tripDetail(label,val){ return esc(label)+': '+(val?('<strong>'+esc(val)+'</strong>'):'____________________'); }
+function tripSel(){ if(!data.trip.sel)data.trip.sel={}; return data.trip.sel; }
+function tripSelectedChildren(){ var s=data.trip.sel||{}; return tripChildrenSorted().filter(function(c){return s[c.id];}); }
+function tripSetField(k,val){ data.trip[k]=val; persist(); markDirty(); }
+function tripToggle(id,on){ var s=tripSel(); if(on)s[id]=true; else delete s[id]; persist(); markDirty(); renderTrip(); }
+function tripSelectAll(on){ if(on){ var s=tripSel(); tripChildrenSorted().forEach(function(c){s[c.id]=true;}); } else data.trip.sel={}; persist(); markDirty(); renderTrip(); }
+function openTripPlanner(){ ensureModel(); renderTrip(); }
+function renderTrip(){
+  var m=document.getElementById('formMount'); var t=data.trip; var kids=tripChildrenSorted();
+  var checklist = kids.length ? kids.map(function(c){ var med=tripMedical(c);
+    return '<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;margin-bottom:6px;text-transform:none;font-weight:400"><input type="checkbox" '+(t.sel[c.id]?'checked':'')+' onchange="tripToggle(\''+c.id+'\',this.checked)"><span style="flex:1"><b>'+esc(fullName(c))+'</b> <span style="color:var(--grey);font-size:12px">'+esc(ageShort(c))+(med?' · '+esc(med):'')+'</span></span></label>';
+  }).join('') : '<div class="empty">No children yet. Add children first, then choose who is going.</div>';
+  var n=tripSelectedChildren().length;
+  m.innerHTML='<div class="formcard"><h2>Trip / outing register</h2>'+
+    '<p style="color:var(--grey);font-size:13px;margin-top:0">Fill in the outing details and tick the children who are going. The register then prints with those details and only the selected children.</p>'+
+    '<div class="subhead">Outing details</div>'+
+    '<div class="grid">'+
+      '<div class="field"><label for="tr_date">Date of outing</label><input type="date" id="tr_date" value="'+esc(t.date)+'" onchange="tripSetField(\'date\',this.value)"></div>'+
+      '<div class="field"><label for="tr_dest">Destination</label><input id="tr_dest" value="'+esc(t.destination)+'" onchange="tripSetField(\'destination\',this.value)"></div>'+
+      '<div class="field"><label for="tr_staff">Staff attending</label><input id="tr_staff" value="'+esc(t.staff)+'" onchange="tripSetField(\'staff\',this.value)"></div>'+
+      '<div class="field"><label for="tr_ratio">Adults : children ratio</label><input id="tr_ratio" value="'+esc(t.ratio)+'" onchange="tripSetField(\'ratio\',this.value)"></div>'+
+      '<div class="field"><label for="tr_transport">Transport</label><input id="tr_transport" value="'+esc(t.transport)+'" placeholder="e.g. minibus, walking" onchange="tripSetField(\'transport\',this.value)"></div>'+
+      '<div class="field"><label for="tr_times">Departure / return time</label><input id="tr_times" value="'+esc(t.times)+'" placeholder="e.g. 9:30 to 15:00" onchange="tripSetField(\'times\',this.value)"></div>'+
+    '</div>'+
+    '<div class="field"><label for="tr_notes">Notes (optional)</label><input id="tr_notes" value="'+esc(t.notes)+'" placeholder="packed lunch, kit, medication to take" onchange="tripSetField(\'notes\',this.value)"></div>'+
+    '<div class="subhead">Children on this outing <span style="color:var(--grey);font-weight:400;font-size:12px">('+n+' selected)</span></div>'+
+    '<div style="margin-bottom:8px"><button class="ghost" onclick="tripSelectAll(true)">Select all</button> <button class="ghost" onclick="tripSelectAll(false)">Clear all</button></div>'+
+    checklist+
+    '<div class="formactions" style="margin-top:14px"><button class="primary" onclick="generate(\'trip\')">Generate register</button><button class="ghost" onclick="closeForm()">Close</button></div></div>';
+  m.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 /* ---------- Word export (table-based so Word lays it out correctly) ---------- */
@@ -1187,7 +1229,10 @@ function defaultHoliday(){ return { start:'2026-07-20', weeks:7, cap:null,
 function ensureModel(){ if(!data.holiday||typeof data.holiday!=='object') data.holiday=defaultHoliday();
   var H=data.holiday; if(!H.start)H.start='2026-07-20'; if(!H.weeks)H.weeks=7; if(!('cap' in H))H.cap=null;
   if(!Array.isArray(H.closed))H.closed=[]; if(!H.labels)H.labels={}; if(!H.sel)H.sel={};
-  (data.children||[]).forEach(function(c){ if(!Array.isArray(c.log))c.log=[]; if(!('lastConfirmed' in c))c.lastConfirmed=''; }); }
+  (data.children||[]).forEach(function(c){ if(!Array.isArray(c.log))c.log=[]; if(!('lastConfirmed' in c))c.lastConfirmed=''; });
+  if(!data.trip||typeof data.trip!=='object') data.trip=defaultTrip();
+  var T=data.trip; ['date','destination','staff','ratio','transport','times','notes'].forEach(function(k){ if(!(k in T))T[k]=''; }); if(!T.sel)T.sel={}; }
+function defaultTrip(){ return {date:'',destination:'',staff:'',ratio:'',transport:'',times:'',notes:'',sel:{}}; }
 function holIsoAdd(iso,n){ var d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
 function holDow(iso){ return new Date(iso+'T00:00:00').getDay(); }
 function holUK(iso){ var p=iso.split('-'); return parseInt(p[2],10)+'/'+parseInt(p[1],10); }
