@@ -1,1 +1,213 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Little Puddings, Update your details</title>
+<style>
+  :root{--green:#1A7A4A;--gold:#D4A017;--grey:#6B6460;--pale:#E8F1EC;--cream:#FBF3DC;--line:#CCCCCC;--ink:#2b2b2b;--burg:#A13A2A}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:#f3f5f2;line-height:1.5;font-size:16px}
+  h1,h2{font-family:Georgia,'Times New Roman',serif;color:var(--green);margin:0 0 .3em}
+  header{background:var(--green);color:#fff;padding:20px 18px;border-bottom:5px solid var(--gold)}
+  header h1{color:#fff;margin:0;font-size:22px}
+  header p{margin:5px 0 0;color:#dce9e2;font-size:14px}
+  .wrap{max-width:640px;margin:0 auto;padding:16px 14px 120px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+  .intro{background:var(--cream);border:1px solid #e6d18a;border-left:5px solid var(--gold)}
+  .intro p{margin:0 0 8px}
+  .intro p:last-child{margin-bottom:0}
+  h2{font-size:18px;border-bottom:2px solid var(--pale);padding-bottom:6px;margin-bottom:12px}
+  label{display:block;font-size:13px;font-weight:bold;color:var(--grey);margin:12px 0 4px;text-transform:uppercase;letter-spacing:.02em}
+  label:first-child{margin-top:0}
+  input,select,textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:8px;font-size:16px;font-family:Arial;background:#fff}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--green);outline-offset:-1px;border-color:var(--green)}
+  textarea{min-height:70px;resize:vertical}
+  .hint{font-size:13px;color:var(--grey);font-weight:normal;text-transform:none;letter-spacing:0;margin:2px 0 0}
+  .rolebox{background:var(--pale);border:1px solid #bcd9c9;border-radius:8px;padding:10px 12px;font-size:15px;color:var(--ink)}
+  .rolebox strong{color:var(--green)}
+  .two{display:flex;gap:12px;flex-wrap:wrap}
+  .two>div{flex:1;min-width:140px}
+  .confirmline{display:flex;gap:10px;align-items:flex-start;background:var(--pale);border:1px solid #bcd9c9;border-radius:8px;padding:12px;margin-top:10px}
+  .confirmline input{width:22px;height:22px;flex:0 0 auto;margin-top:2px}
+  .confirmline label{margin:0;text-transform:none;letter-spacing:0;font-weight:normal;color:var(--ink);font-size:15px}
+  .savebar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:2px solid var(--gold);padding:12px 14px;display:flex;justify-content:center;box-shadow:0 -2px 10px rgba(0,0,0,.08)}
+  .savebar .inner{max-width:640px;width:100%;display:flex;gap:10px}
+  button{font-family:Arial;font-size:16px;font-weight:bold;cursor:pointer;border-radius:9px;padding:14px 18px;border:1px solid transparent}
+  .primary{background:var(--green);color:#fff;flex:1}
+  .primary:hover{background:#15633c}
+  .ghost{background:#fff;color:var(--green);border:1px solid var(--green)}
+  .ghost:hover{background:var(--pale)}
+  .err{color:var(--burg);font-weight:bold;font-size:14px;margin-top:8px;min-height:18px}
+  #done{display:none}
+  .done-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:22px;text-align:center}
+  .done-card h2{border:none;color:var(--green)}
+  .tick{width:56px;height:56px;border-radius:50%;background:var(--pale);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 10px;border:2px solid var(--green)}
+  .steps{text-align:left;background:var(--cream);border:1px solid #e6d18a;border-radius:8px;padding:14px;margin:14px 0;font-size:15px}
+  .steps ol{margin:6px 0 0;padding-left:20px}
+  .codebox{width:100%;font-family:monospace;font-size:12px;height:70px;margin-top:8px}
+  .name-req{color:var(--burg)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Little Puddings</h1>
+  <p>Update your details, staff record</p>
+</header>
 
+<div class="wrap" id="formArea">
+  <div class="card intro">
+    <p><strong id="greeting">Please check your details below.</strong></p>
+    <p>We keep staff records up to date so that, in an emergency, we can reach the right people quickly. Please update anything that has changed, then tap <strong>Finish</strong> at the bottom. Your answers are sent only to Little Puddings.</p>
+  </div>
+
+  <div class="card">
+    <h2>You</h2>
+    <label>Your name <span class="name-req">*</span></label>
+    <input id="name" autocomplete="off">
+    <div id="roleWrap" style="display:none">
+      <label>Your role</label>
+      <div class="rolebox">Recorded as: <strong id="roleText"></strong><div class="hint">If this is wrong, please tell Susanne directly; roles are set by the setting.</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Next of kin</h2>
+    <p class="hint">The main person we should contact about you in an emergency.</p>
+    <label>Name</label>
+    <input id="nok">
+    <label>Relationship to you</label>
+    <input id="nokrel" placeholder="e.g. Husband, Partner, Mother">
+    <label>Phone</label>
+    <input id="nokphone" type="tel" inputmode="tel">
+  </div>
+
+  <div class="card">
+    <h2>Other emergency contacts</h2>
+    <p class="hint">Anyone else we could call. One per line, with a name and phone number.</p>
+    <label>Emergency contacts</label>
+    <textarea id="emergency" placeholder="e.g. Jane Smith, 07700 900123&#10;Mark Jones, 07700 900456"></textarea>
+  </div>
+
+  <div class="card">
+    <h2>Medical</h2>
+    <label>Current medication or medical needs (optional)</label>
+    <input id="medication" placeholder="Leave blank if none">
+  </div>
+
+  <div class="card">
+    <h2>Your own children (optional)</h2>
+    <p class="hint">Only if useful for us to know, for example for pick-ups or emergencies.</p>
+    <label>Names, schools, year groups</label>
+    <textarea id="childrenNote"></textarea>
+  </div>
+
+  <div class="card">
+    <h2>Confirm</h2>
+    <div class="confirmline">
+      <input type="checkbox" id="confirmTick">
+      <label for="confirmTick">I confirm these details are correct as of today, <span id="todayLabel"></span>.</label>
+    </div>
+    <div class="err" id="err"></div>
+  </div>
+</div>
+
+<div class="savebar" id="savebar">
+  <div class="inner">
+    <button class="primary" onclick="finish()">Finish and send</button>
+  </div>
+</div>
+
+<div class="wrap" id="done">
+  <div class="done-card">
+    <div class="tick">&#10003;</div>
+    <h2>Thank you</h2>
+    <p>Your details are ready to send back to Little Puddings. Please choose one of the options below.</p>
+    <div class="steps">
+      <strong>To send your details:</strong>
+      <ol>
+        <li>Tap <strong>Download my details</strong> to save the file, then reply to the message Little Puddings sent you and attach it, or</li>
+        <li>Tap <strong>Copy my details</strong> and paste them into your reply.</li>
+      </ol>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="primary" onclick="downloadFile()" style="flex:none">Download my details</button>
+      <button class="ghost" onclick="copyCode()">Copy my details</button>
+    </div>
+    <textarea class="codebox" id="codebox" readonly style="display:none"></textarea>
+    <p class="hint" id="copymsg" style="margin-top:10px"></p>
+    <p style="margin-top:16px"><button class="ghost" onclick="backToForm()">Go back and change something</button></p>
+  </div>
+</div>
+
+<script>
+"use strict";
+var FIELDS=['name','nok','nokrel','nokphone','emergency','medication','childrenNote'];
+var STAFF_ID='', ROLE='';
+
+function val(id){ var e=document.getElementById(id); return e?e.value.trim():''; }
+function setVal(id,v){ var e=document.getElementById(id); if(e&&v!=null) e.value=v; }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function fmtToday(){ var d=new Date(); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
+function b64encode(obj){ return btoa(unescape(encodeURIComponent(JSON.stringify(obj)))); }
+function b64decode(str){ return JSON.parse(decodeURIComponent(escape(atob(str)))); }
+
+(function prefill(){
+  document.getElementById('todayLabel').textContent=fmtToday();
+  try{
+    var h=location.hash||'';
+    if(h.indexOf('#d=')===0){
+      var data=b64decode(h.slice(3));
+      STAFF_ID=data.id||''; ROLE=data.role||'';
+      FIELDS.forEach(function(f){ if(f in data) setVal(f,data[f]); });
+      if(ROLE){ document.getElementById('roleWrap').style.display='block'; document.getElementById('roleText').textContent=ROLE; }
+      var nm=(data.name||'').trim();
+      if(nm) document.getElementById('greeting').textContent='Please check your details, '+nm.split(' ')[0]+'.';
+    }
+  }catch(e){}
+})();
+
+function collect(){
+  var staff={ role:ROLE }; FIELDS.forEach(function(f){ staff[f]=val(f); });
+  return { v:1, type:'lp_staff_update', id:STAFF_ID, submittedDate:todayISO(), staff:staff };
+}
+function payloadName(){
+  var s=(val('name')||'staff').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+  return 'little-puddings-staff-'+s+'-update.json';
+}
+function finish(){
+  var err=document.getElementById('err');
+  if(!val('name')){ err.textContent='Please enter your name.'; document.getElementById('name').focus(); return; }
+  if(!document.getElementById('confirmTick').checked){ err.textContent='Please tick the box to confirm the details are correct.'; return; }
+  err.textContent='';
+  window._payload=collect();
+  document.getElementById('formArea').style.display='none';
+  document.getElementById('savebar').style.display='none';
+  document.getElementById('done').style.display='block';
+  window.scrollTo(0,0);
+}
+function backToForm(){
+  document.getElementById('done').style.display='none';
+  document.getElementById('formArea').style.display='block';
+  document.getElementById('savebar').style.display='flex';
+  window.scrollTo(0,0);
+}
+function downloadFile(){
+  var blob=new Blob([JSON.stringify(window._payload,null,2)],{type:'application/json'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=payloadName(); a.click();
+  document.getElementById('copymsg').textContent='Saved. Now attach that file to your reply to Little Puddings.';
+}
+function copyCode(){
+  var code='LPUPD1:'+b64encode(window._payload);
+  var box=document.getElementById('codebox');
+  box.style.display='block'; box.value=code; box.select();
+  var ok=false; try{ ok=document.execCommand('copy'); }catch(e){}
+  if(navigator.clipboard){ navigator.clipboard.writeText(code).then(function(){},function(){}); ok=true; }
+  document.getElementById('copymsg').textContent = ok
+    ? 'Copied. Paste it into your reply to Little Puddings.'
+    : 'Select the text above, copy it, and paste it into your reply.';
+}
+</script>
+</body>
+</html>
