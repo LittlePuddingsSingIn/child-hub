@@ -204,6 +204,7 @@
       <button class="ghost" onclick="openHolidayPlanner()">Holiday planner</button>
       <button class="ghost" onclick="openReviews()">Reviews</button>
       <button class="ghost" onclick="openChecklist()">Checklists</button>
+      <button class="ghost" onclick="openImport()">Import a reply</button>
       <button class="ghost" onclick="openSettings()">Fees &amp; terms</button>
       <button class="ghost" onclick="openOneDrive()">OneDrive</button>
       <span class="spacer"></span>
@@ -385,15 +386,20 @@ function renderLists(){
   document.getElementById('childCount').textContent = data.children.length ? '('+data.children.length+')' : '';
   if(!ch.length){ cc.innerHTML='<div class="empty">No children yet. Use “Add child” to start your list.</div>'; }
   else{
-    cc.innerHTML='<table><thead><tr><th>Name</th><th>Age band</th><th>DOB</th><th>Attends</th><th></th></tr></thead><tbody>'+
-      ch.map(c=>{ const b=bandOf(c);
-        return '<tr><td><b>'+esc(fullName(c))+'</b>'+(hasAllergyInfo(c)?' <span title="allergy or dietary noted" style="color:var(--burg)">⚠</span>':'')+(reviewOverdue(c)?' <span title="parent review overdue" style="color:var(--burg)">◷</span>':'')+'</td>'+
-          '<td><span class="bandpill" style="background:'+bandColor(b)+'">'+b+'</span></td>'+
-          '<td>'+esc(fmtDate(c.dob))+'</td>'+
-          '<td>'+esc(attendsOf(c))+'</td>'+
-          '<td><div class="rowact"><button class="ghost" onclick="generate(\'record\',\''+c.id+'\')">Form</button><button class="ghost" onclick="editPerson(\''+c.id+'\',\'child\')">Edit</button>'+
-          '<button class="danger" onclick="del(\''+c.id+'\',\'child\')">Delete</button></div></td></tr>'; }).join('')+
-      '</tbody></table>';
+    const groups=[['ayr','All year round'],['term','Term time only'],['holidays','Holidays only'],['','Basis not set']];
+    let html='';
+    const rowFor=(c)=>{ const b=bandOf(c);
+      return '<tr><td><b>'+esc(fullName(c))+'</b>'+(hasAllergyInfo(c)?' <span title="allergy or dietary noted" style="color:var(--burg)">⚠</span>':'')+(reviewOverdue(c)?' <span title="parent review overdue" style="color:var(--burg)">◷</span>':'')+'</td>'+
+        '<td><span class="bandpill" style="background:'+bandColor(b)+'">'+b+'</span></td>'+
+        '<td>'+esc(fmtDate(c.dob))+'</td>'+
+        '<td>'+esc(attendsOf(c))+'</td>'+
+        '<td><div class="rowact"><button class="ghost" onclick="generate(\'record\',\''+c.id+'\')">Form</button><button class="ghost" onclick="openParentLink(\''+c.id+'\')">Link</button><button class="ghost" onclick="editPerson(\''+c.id+'\',\'child\')">Edit</button>'+
+        '<button class="danger" onclick="del(\''+c.id+'\',\'child\')">Delete</button></div></td></tr>'; };
+    groups.forEach(g=>{ const rows=ch.filter(c=>(c.basis||'')===g[0]); if(!rows.length) return;
+      html+='<div class="subhead" style="margin-top:10px">'+g[1]+' <span style="color:var(--grey);font-weight:400;font-size:12px">('+rows.length+')</span></div>'+
+        '<table><thead><tr><th>Name</th><th>Age band</th><th>DOB</th><th>Attends</th><th></th></tr></thead><tbody>'+rows.map(rowFor).join('')+'</tbody></table>';
+    });
+    cc.innerHTML=html;
   }
   const st=data.staff;
   const sc=document.getElementById('staffList');
@@ -403,7 +409,7 @@ function renderLists(){
     sc.innerHTML='<table><thead><tr><th>Name</th><th>Role</th><th>Next of kin</th><th></th></tr></thead><tbody>'+
       st.map(s=> '<tr><td><b>'+esc(s.name||'')+'</b></td><td>'+esc(s.role||'')+'</td>'+
         '<td>'+esc([s.nok,s.nokphone].filter(Boolean).join(' · '))+'</td>'+
-        '<td><div class="rowact"><button class="ghost" onclick="editPerson(\''+s.id+'\',\'staff\')">Edit</button>'+
+        '<td><div class="rowact"><button class="ghost" onclick="openStaffLink(\''+s.id+'\')">Link</button><button class="ghost" onclick="editPerson(\''+s.id+'\',\'staff\')">Edit</button>'+
         '<button class="danger" onclick="del(\''+s.id+'\',\'staff\')">Delete</button></div></td></tr>').join('')+
       '</tbody></table>';
   }
@@ -485,6 +491,10 @@ function childForm(c,editing){
      '<div class="subhead">Parent review</div>'+
      fld('f_lastconfirmed','Details last confirmed by parent',c.lastConfirmed,'date')+
      '<div class="field"><span class="agehint">Set this when a parent returns their updated form; the Reviews panel flags anyone overdue.</span></div>'+
+     '<div class="subhead">Booking basis</div>'+
+     '<div class="field full"><label for="f_basis">Attendance basis (for grouping)</label><select id="f_basis">'+
+       ['','ayr','term','holidays'].map(function(k){var L={'':'Not set','ayr':'All year round','term':'Term time only','holidays':'Holidays only'}[k]; return '<option value="'+k+'"'+((c.basis||'')===k?' selected':'')+'>'+L+'</option>';}).join('')+
+     '</select><span class="agehint">Groups the children list. Term time only children can still be given the odd holiday day in the Holiday planner.</span></div>'+
      '<div class="subhead">Funding and fees</div>'+
      '<div class="field full"><label for="f_funding">Funding entitlement</label><input id="f_funding" list="fundingopts" value="'+esc(c.funding||'')+'" placeholder="e.g. Extended 30 hours (working parents)"><datalist id="fundingopts"><option value="None / private"></option><option value="2-year-old funding (15 hours)"></option><option value="Universal 15 hours (3 to 4 year olds)"></option><option value="Extended 30 hours (working parents)"></option><option value="Working parent entitlement (9 months to 2 years)"></option></datalist></div>'+
      '<div class="field full"><label>Fees that apply (tick all that apply)</label>'+
@@ -533,7 +543,7 @@ function saveChild(){
     attendance: DAYS.filter(d=>{const e=document.getElementById('f_on_'+d.slice(0,3));return e&&e.checked;})
         .map(d=>{const ab=d.slice(0,3);return {day:d, from:v('f_from_'+ab), to:v('f_to_'+ab), from2:v('f_from2_'+ab), to2:v('f_to2_'+ab)};}),
     atSchool:(document.getElementById('f_atschool')||{}).checked||false,
-    school:v('f_school'), schoolphone:v('f_schoolphone'), start:v('f_start'), leave:v('f_leave'), funding:v('f_funding'),
+    school:v('f_school'), schoolphone:v('f_schoolphone'), start:v('f_start'), leave:v('f_leave'), funding:v('f_funding'), basis:v('f_basis'),
     fees: FEE_ROWS.filter(r=>!r.standard && (document.getElementById('f_fee_'+r.key)||{}).checked).map(r=>r.key),
     allergies:v('f_allergies'), dietary:v('f_dietary'), alert:v('f_alert') };
   if(!rec.first && !rec.surname){ alert('Please enter at least a first name or surname.'); return; }
@@ -1253,7 +1263,10 @@ function ensureModel(){ if(!data.holiday||typeof data.holiday!=='object') data.h
   if(!data.trip||typeof data.trip!=='object') data.trip=defaultTrip();
   var T=data.trip; ['date','destination','staff','ratio','transport','times','notes'].forEach(function(k){ if(!(k in T))T[k]=''; }); if(!T.sel)T.sel={};
   if(!data.checklist||typeof data.checklist!=='object') data.checklist=defaultChecklist();
-  var CL=data.checklist; if(!('title' in CL))CL.title=''; if(!CL.order)CL.order='ageYoung'; if(!('showAge' in CL))CL.showAge=true; if(!('current' in CL))CL.current=true; if(!Array.isArray(CL.cols))CL.cols=['','','']; }
+  var CL=data.checklist; if(!('title' in CL))CL.title=''; if(!CL.order)CL.order='ageYoung'; if(!('showAge' in CL))CL.showAge=true; if(!('current' in CL))CL.current=true; if(!Array.isArray(CL.cols))CL.cols=['','','']; 
+  data.settings=data.settings||{};
+  if(!('parentFormUrl' in data.settings)) data.settings.parentFormUrl='https://littlepuddingssingin.github.io/parent-form/';
+  if(!('staffFormUrl' in data.settings)) data.settings.staffFormUrl='https://littlepuddingssingin.github.io/staff-form/'; }
 function defaultChecklist(){ return {title:'', order:'ageYoung', showAge:true, current:true, cols:['','','']}; }
 function defaultTrip(){ return {date:'',destination:'',staff:'',ratio:'',transport:'',times:'',notes:'',sel:{}}; }
 function holIsoAdd(iso,n){ var d=new Date(iso+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
@@ -1532,6 +1545,107 @@ function buildChecklistWordHTML(){
   kids.forEach(function(c,i){ h+='<tr><td style="'+td+'">'+(i+1)+'</td><td style="'+td+';font-weight:bold">'+esc(fullName(c))+'</td>'+(CL.showAge?'<td style="'+td+'">'+esc(ageShort(c))+'</td>':'')+cols.map(function(){return '<td style="'+td+'">&#160;</td>';}).join('')+'</tr>'; });
   h+='</table><div style="font-family:Arial;font-size:9pt;color:#6B6460;margin-top:10px">Total: '+kids.length+' children</div>';
   return h;
+}
+
+/* ================= PARENT & STAFF FORM LINKS ================= */
+function b64enc(obj){ return btoa(unescape(encodeURIComponent(JSON.stringify(obj)))); }
+function b64dec(str){ return JSON.parse(decodeURIComponent(escape(atob(str)))); }
+var PARENT_FIELDS=['first','surname','preferred','dob','sex','address','homephone','c1label','c1name','c1mobile','c1email','c1work','c1workphone','c2label','c2name','c2mobile','c2email','c2work','c2workphone','doctorname','doctorphone','ec1name','ec1phone','ec2name','ec2phone','school','schoolphone','allergies','dietary','alert'];
+var STAFF_FIELDS=['name','nok','nokrel','nokphone','emergency','medication','childrenNote'];
+var PLABELS={first:'First name',surname:'Surname',preferred:'Known as',dob:'Date of birth',sex:'Sex',address:'Home address',homephone:'Home phone',c1label:'Carer 1 relationship',c1name:'Carer 1 name',c1mobile:'Carer 1 mobile',c1email:'Carer 1 email',c1work:'Carer 1 workplace',c1workphone:'Carer 1 work phone',c2label:'Carer 2 relationship',c2name:'Carer 2 name',c2mobile:'Carer 2 mobile',c2email:'Carer 2 email',c2work:'Carer 2 workplace',c2workphone:'Carer 2 work phone',doctorname:'Doctor name',doctorphone:'Doctor phone',ec1name:'Emergency contact 1 name',ec1phone:'Emergency contact 1 phone',ec2name:'Emergency contact 2 name',ec2phone:'Emergency contact 2 phone',school:'School',schoolphone:'School phone',allergies:'Allergies',dietary:'Dietary',alert:'Medical needs'};
+var SLABELS={name:'Name',nok:'Next of kin name',nokrel:'Next of kin relationship',nokphone:'Next of kin phone',emergency:'Emergency contacts',medication:'Medication',childrenNote:'Own children'};
+function formBase(kind){ var s=data.settings||{}; return kind==='staff' ? (s.staffFormUrl||'https://littlepuddingssingin.github.io/staff-form/') : (s.parentFormUrl||'https://littlepuddingssingin.github.io/parent-form/'); }
+function openParentLink(id){ ensureModel(); var c=data.children.find(function(x){return x.id===id;}); if(!c)return;
+  var payload={id:c.id}; PARENT_FIELDS.forEach(function(f){ payload[f]=c[f]||''; });
+  renderLinkPanel('parent', fullName(c), formBase('parent')+'#d='+b64enc(payload)); }
+function openStaffLink(id){ ensureModel(); var s=data.staff.find(function(x){return x.id===id;}); if(!s)return;
+  var payload={id:s.id, role:s.role||''}; STAFF_FIELDS.forEach(function(f){ payload[f]=s[f]||''; });
+  renderLinkPanel('staff', s.name||'', formBase('staff')+'#d='+b64enc(payload)); }
+function renderLinkPanel(kind, name, link){
+  var m=document.getElementById('formMount');
+  var baseKey = kind==='staff'?'staffFormUrl':'parentFormUrl';
+  var who = kind==='staff'?'the staff member':'the parent';
+  m.innerHTML='<div class="formcard"><h2>'+(kind==='staff'?'Staff':'Parent')+' form link for '+esc(name)+'</h2>'+
+    '<p style="color:var(--grey);font-size:13px;margin-top:0">Send this link to '+who+'. It opens their form already filled in with current details, so they only change what has altered. When they send their reply back, use <strong>Import a reply</strong> to bring it in.</p>'+
+    '<div class="field full"><label>Personalised link</label><textarea readonly id="linkOut" style="height:74px;font-family:monospace;font-size:12px">'+esc(link)+'</textarea></div>'+
+    '<div class="formactions" style="margin:4px 0"><button class="primary" onclick="copyLink()">Copy link</button><button class="ghost" onclick="closeForm()">Close</button></div>'+
+    '<div class="subhead">Form web address</div>'+
+    '<div class="field full"><label for="formBaseIn">Where '+(kind==='staff'?'the staff':'the parent')+' form is hosted</label><input id="formBaseIn" value="'+esc(formBase(kind))+'"><span class="agehint">Set this once to match where you uploaded the form, then reopen a link. It is remembered and synced.</span></div>'+
+    '<div class="formactions"><button class="ghost" onclick="saveFormBase(\''+baseKey+'\')">Save address</button></div></div>';
+  m.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function copyLink(){ var t=document.getElementById('linkOut'); t.select(); try{document.execCommand('copy');}catch(e){} if(navigator.clipboard){navigator.clipboard.writeText(t.value).then(function(){},function(){});} flag('Link copied'); }
+function saveFormBase(key){ var val2=(document.getElementById('formBaseIn').value||'').trim(); data.settings=data.settings||{}; data.settings[key]=val2; persist(); markDirty(); flag('Address saved'); }
+
+/* ================= IMPORT A REPLY ================= */
+var IMPORT=null;
+function decodeReply(text){ text=(text||'').trim(); if(!text) return null; if(text.indexOf('LPUPD1:')===0) return b64dec(text.slice(7)); return JSON.parse(text); }
+function readReplyFromText(){ try{ startImport(decodeReply(document.getElementById('impText').value)); }catch(e){ alert('That code could not be read. Please check it was pasted in full.'); } }
+function readReplyFromFile(evt){ var f=evt.target.files[0]; if(!f) return; var r=new FileReader(); r.onload=function(){ try{ startImport(JSON.parse(r.result)); }catch(e){ alert('That file could not be read.'); } }; r.readAsText(f); }
+function startImport(p){
+  if(!p||!p.type||(p.type!=='lp_parent_update'&&p.type!=='lp_staff_update')){ alert('This does not look like a Little Puddings form reply.'); return; }
+  var kind = p.type==='lp_staff_update'?'staff':'parent';
+  var listKey = kind==='staff'?'staff':'children';
+  var rec = p.id ? data[listKey].find(function(x){return x.id===p.id;}) : null;
+  IMPORT={p:p, kind:kind, listKey:listKey, recId: rec?rec.id:null};
+  renderImport(IMPORT);
+}
+function openImport(){ ensureModel(); IMPORT=null; renderImport(null); }
+function renderImport(imp){
+  var m=document.getElementById('formMount');
+  if(!imp){
+    m.innerHTML='<div class="formcard"><h2>Import a reply</h2>'+
+      '<p style="color:var(--grey);font-size:13px;margin-top:0">Bring in a parent or staff reply. Paste the code they sent, or load the file they returned. You will see what changed and approve it before anything is saved.</p>'+
+      '<div class="field full"><label for="impText">Paste a reply code</label><textarea id="impText" style="height:80px;font-family:monospace;font-size:12px" placeholder="LPUPD1:..."></textarea></div>'+
+      '<div class="formactions" style="margin:4px 0"><button class="primary" onclick="readReplyFromText()">Read pasted code</button></div>'+
+      '<div class="field full"><label for="impFile">or load a reply file</label><input id="impFile" type="file" accept="application/json,.json" onchange="readReplyFromFile(event)"></div>'+
+      '<div class="formactions" style="margin-top:12px"><button class="ghost" onclick="closeForm()">Close</button></div></div>';
+    m.scrollIntoView({behavior:'smooth',block:'start'}); return;
+  }
+  var p=imp.p, kind=imp.kind, fields = kind==='staff'?STAFF_FIELDS:PARENT_FIELDS, labels = kind==='staff'?SLABELS:PLABELS;
+  var submitted = kind==='staff'?(p.staff||{}):(p.child||{});
+  var rec = imp.recId ? data[imp.listKey].find(function(x){return x.id===imp.recId;}) : null;
+  var who = kind==='staff'?(submitted.name||''):([submitted.first,submitted.surname].filter(Boolean).join(' '));
+  var matchSel='';
+  if(!rec){
+    var opts=data[imp.listKey].map(function(x){ var nm=kind==='staff'?(x.name||''):fullName(x); return '<option value="'+x.id+'">'+esc(nm)+'</option>'; }).join('');
+    matchSel='<div style="background:var(--cream);border:1px solid #e6d18a;border-left:5px solid var(--gold);border-radius:6px;padding:12px;margin:10px 0;font-size:13px">This reply is not linked to a record yet. Choose who it belongs to:'+
+      '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><select id="impMatch" style="max-width:280px"><option value="">Add as a new '+(kind==='staff'?'staff member':'child')+'</option>'+opts+'</select>'+
+      '<button class="ghost" onclick="setImportMatch()">Use this</button></div></div>';
+  }
+  var rows=fields.map(function(f){
+    var cur = rec?(rec[f]||''):''; var nw = submitted[f]||'';
+    var changed = (nw||'')!==(cur||'');
+    var showCur = f==='dob'?fmtDate(cur):esc(cur); var showNew = f==='dob'?fmtDate(nw):esc(nw);
+    var pre = (changed && nw) ? 'checked' : '';
+    return '<tr style="'+(changed?'':'opacity:.5')+'"><td style="width:26px;text-align:center"><input type="checkbox" data-f="'+f+'" '+pre+'></td>'+
+      '<td>'+esc(labels[f]||f)+'</td>'+
+      '<td style="color:var(--grey)">'+(showCur||'<span style="color:#9aa39c">blank</span>')+'</td>'+
+      '<td><strong>'+(showNew||'<span style="color:#9aa39c">blank</span>')+'</strong>'+(changed?'':' <span style="color:#9aa39c">(same)</span>')+'</td></tr>';
+  }).join('');
+  m.innerHTML='<div class="formcard"><h2>Reply from '+esc(who||'unknown')+'</h2>'+
+    '<p style="color:var(--grey);font-size:13px;margin-top:0">'+(kind==='staff'?'Staff':'Parent')+' reply'+(p.submittedDate?', submitted '+esc(fmtDate(p.submittedDate)):'')+(p.submittedBy?', by '+esc(p.submittedBy):'')+'. Ticked rows are changes. Untick anything you do not want, then apply.</p>'+
+    matchSel+
+    '<table><thead><tr><th></th><th>Field</th><th>Current</th><th>New</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '<div class="formactions" style="margin-top:12px"><button class="primary" onclick="applyImport()">Apply ticked changes</button><button class="ghost" onclick="openImport()">Cancel</button></div></div>';
+  m.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function setImportMatch(){ var val2=document.getElementById('impMatch').value;
+  if(val2){ IMPORT.recId=val2; }
+  else { var rec={id:uid()}; if(IMPORT.kind==='staff'){ rec.type='staff'; data.staff.push(rec); } else { data.children.push(rec); } IMPORT.recId=rec.id; }
+  renderImport(IMPORT); }
+function applyImport(){
+  if(!IMPORT) return;
+  var rec = IMPORT.recId ? data[IMPORT.listKey].find(function(x){return x.id===IMPORT.recId;}) : null;
+  if(!rec){ alert('Please choose who this reply belongs to first.'); return; }
+  var submitted = IMPORT.kind==='staff'?(IMPORT.p.staff||{}):(IMPORT.p.child||{});
+  var boxes=document.querySelectorAll('#formMount input[data-f]'); var n=0;
+  boxes.forEach(function(b){ if(b.checked){ var f=b.getAttribute('data-f'); rec[f]=submitted[f]||''; n++; } });
+  if(IMPORT.kind!=='staff'){ rec.lastConfirmed=IMPORT.p.submittedDate||todayISO(); rec.log=rec.log||[]; rec.log.push({date:todayISO(),note:'Updated from parent form ('+n+' field'+(n===1?'':'s')+')'}); if(rec.log.length>20)rec.log=rec.log.slice(-20); }
+  persist(); markDirty(); renderLists();
+  var nm=IMPORT.kind==='staff'?(rec.name||'staff member'):fullName(rec);
+  document.getElementById('formMount').innerHTML='<div class="formcard"><h2>Saved</h2><p>'+n+' change'+(n===1?'':'s')+' applied to '+esc(nm)+(IMPORT.kind!=='staff'?', and they are marked confirmed on the Reviews list.':'.')+'</p><div class="formactions"><button class="ghost" onclick="openImport()">Import another</button><button class="ghost" onclick="closeForm()">Close</button></div></div>';
+  IMPORT=null;
 }
 
 /* ---------- init ---------- */
