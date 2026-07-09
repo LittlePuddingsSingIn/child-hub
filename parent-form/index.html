@@ -1,1 +1,277 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Little Puddings, Update your child's details</title>
+<style>
+  :root{--green:#1A7A4A;--gold:#D4A017;--grey:#6B6460;--pale:#E8F1EC;--cream:#FBF3DC;--line:#CCCCCC;--ink:#2b2b2b;--burg:#A13A2A}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:#f3f5f2;line-height:1.5;font-size:16px}
+  h1,h2{font-family:Georgia,'Times New Roman',serif;color:var(--green);margin:0 0 .3em}
+  header{background:var(--green);color:#fff;padding:20px 18px;border-bottom:5px solid var(--gold)}
+  header h1{color:#fff;margin:0;font-size:22px}
+  header p{margin:5px 0 0;color:#dce9e2;font-size:14px}
+  .wrap{max-width:640px;margin:0 auto;padding:16px 14px 120px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+  .intro{background:var(--cream);border:1px solid #e6d18a;border-left:5px solid var(--gold)}
+  .intro p{margin:0 0 8px}
+  .intro p:last-child{margin-bottom:0}
+  h2{font-size:18px;border-bottom:2px solid var(--pale);padding-bottom:6px;margin-bottom:12px}
+  label{display:block;font-size:13px;font-weight:bold;color:var(--grey);margin:12px 0 4px;text-transform:uppercase;letter-spacing:.02em}
+  label:first-child{margin-top:0}
+  input,select,textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:8px;font-size:16px;font-family:Arial;background:#fff}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--green);outline-offset:-1px;border-color:var(--green)}
+  textarea{min-height:60px;resize:vertical}
+  .hint{font-size:13px;color:var(--grey);font-weight:normal;text-transform:none;letter-spacing:0;margin:2px 0 0}
+  .two{display:flex;gap:12px;flex-wrap:wrap}
+  .two>div{flex:1;min-width:140px}
+  .confirmline{display:flex;gap:10px;align-items:flex-start;background:var(--pale);border:1px solid #bcd9c9;border-radius:8px;padding:12px;margin-top:10px}
+  .confirmline input{width:22px;height:22px;flex:0 0 auto;margin-top:2px}
+  .confirmline label{margin:0;text-transform:none;letter-spacing:0;font-weight:normal;color:var(--ink);font-size:15px}
+  .savebar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:2px solid var(--gold);padding:12px 14px;display:flex;justify-content:center;box-shadow:0 -2px 10px rgba(0,0,0,.08)}
+  .savebar .inner{max-width:640px;width:100%;display:flex;gap:10px}
+  button{font-family:Arial;font-size:16px;font-weight:bold;cursor:pointer;border-radius:9px;padding:14px 18px;border:1px solid transparent}
+  .primary{background:var(--green);color:#fff;flex:1}
+  .primary:hover{background:#15633c}
+  .ghost{background:#fff;color:var(--green);border:1px solid var(--green)}
+  .ghost:hover{background:var(--pale)}
+  .err{color:var(--burg);font-weight:bold;font-size:14px;margin-top:8px;min-height:18px}
+  /* thank you */
+  #done{display:none}
+  .done-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:22px;text-align:center}
+  .done-card h2{border:none;color:var(--green)}
+  .tick{width:56px;height:56px;border-radius:50%;background:var(--pale);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 10px;border:2px solid var(--green)}
+  .steps{text-align:left;background:var(--cream);border:1px solid #e6d18a;border-radius:8px;padding:14px;margin:14px 0;font-size:15px}
+  .steps ol{margin:6px 0 0;padding-left:20px}
+  .codebox{width:100%;font-family:monospace;font-size:12px;height:70px;margin-top:8px}
+  .name-req{color:var(--burg)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Little Puddings</h1>
+  <p>Update your child's details</p>
+</header>
 
+<div class="wrap" id="formArea">
+  <div class="card intro">
+    <p><strong id="greeting">Please check your child's details below.</strong></p>
+    <p>We ask families to confirm their details twice a year so our records, and especially emergency contacts, stay correct. Please update anything that has changed, then tap <strong>Finish</strong> at the bottom. Your answers are sent only to Little Puddings.</p>
+  </div>
+
+  <div class="card">
+    <h2>Your child</h2>
+    <label>First name <span class="name-req">*</span></label>
+    <input id="first" autocomplete="off">
+    <label>Surname</label>
+    <input id="surname" autocomplete="off">
+    <label>Known as (if different)</label>
+    <input id="preferred" autocomplete="off">
+    <div class="two">
+      <div><label>Date of birth</label><input id="dob" type="date"></div>
+      <div><label>Sex</label>
+        <select id="sex"><option value=""></option><option>Female</option><option>Male</option><option>Prefer not to say</option></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Home</h2>
+    <label>Home address</label>
+    <textarea id="address" placeholder="House, street, town, postcode"></textarea>
+    <label>Home phone (if you have one)</label>
+    <input id="homephone" type="tel" inputmode="tel">
+  </div>
+
+  <div class="card">
+    <h2>Parent or carer 1</h2>
+    <label>Relationship to child</label>
+    <input id="c1label" placeholder="e.g. Mum, Dad, Grandma">
+    <label>Full name</label>
+    <input id="c1name">
+    <label>Mobile</label>
+    <input id="c1mobile" type="tel" inputmode="tel">
+    <label>Email</label>
+    <input id="c1email" type="email" inputmode="email">
+    <div class="two">
+      <div><label>Workplace</label><input id="c1work"></div>
+      <div><label>Work phone</label><input id="c1workphone" type="tel" inputmode="tel"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Parent or carer 2</h2>
+    <p class="hint">Leave blank if there is only one.</p>
+    <label>Relationship to child</label>
+    <input id="c2label" placeholder="e.g. Mum, Dad, Grandma">
+    <label>Full name</label>
+    <input id="c2name">
+    <label>Mobile</label>
+    <input id="c2mobile" type="tel" inputmode="tel">
+    <label>Email</label>
+    <input id="c2email" type="email" inputmode="email">
+    <div class="two">
+      <div><label>Workplace</label><input id="c2work"></div>
+      <div><label>Work phone</label><input id="c2workphone" type="tel" inputmode="tel"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Doctor</h2>
+    <label>GP or surgery name</label>
+    <input id="doctorname">
+    <label>Surgery phone</label>
+    <input id="doctorphone" type="tel" inputmode="tel">
+  </div>
+
+  <div class="card">
+    <h2>Emergency contacts</h2>
+    <p class="hint">People we can call if we cannot reach you. Please make sure they know they are listed.</p>
+    <label>Contact 1, name</label>
+    <input id="ec1name">
+    <label>Contact 1, phone</label>
+    <input id="ec1phone" type="tel" inputmode="tel">
+    <label>Contact 2, name</label>
+    <input id="ec2name">
+    <label>Contact 2, phone</label>
+    <input id="ec2phone" type="tel" inputmode="tel">
+  </div>
+
+  <div class="card">
+    <h2>Allergies and medical</h2>
+    <label>Allergies</label>
+    <input id="allergies" placeholder="e.g. Peanuts, egg. Write None if none.">
+    <label>Dietary requirements</label>
+    <input id="dietary" placeholder="e.g. Vegetarian, no pork">
+    <label>Other medical needs</label>
+    <input id="alert" placeholder="e.g. Asthma, inhaler. Leave blank if none.">
+  </div>
+
+  <div class="card">
+    <h2>School</h2>
+    <p class="hint">For school-age children only.</p>
+    <label>School name</label>
+    <input id="school">
+    <label>School phone</label>
+    <input id="schoolphone" type="tel" inputmode="tel">
+  </div>
+
+  <div class="card">
+    <h2>Confirm</h2>
+    <label>Your name</label>
+    <input id="submittedBy" placeholder="The parent or carer completing this">
+    <div class="confirmline">
+      <input type="checkbox" id="confirmTick">
+      <label for="confirmTick">I confirm these details are correct as of today, <span id="todayLabel"></span>.</label>
+    </div>
+    <div class="err" id="err"></div>
+  </div>
+</div>
+
+<div class="savebar" id="savebar">
+  <div class="inner">
+    <button class="primary" onclick="finish()">Finish and send</button>
+  </div>
+</div>
+
+<div class="wrap" id="done">
+  <div class="done-card">
+    <div class="tick">&#10003;</div>
+    <h2>Thank you</h2>
+    <p>Your details are ready to send back to Little Puddings. Please choose one of the options below.</p>
+    <div class="steps">
+      <strong>To send your details:</strong>
+      <ol>
+        <li>Tap <strong>Download my details</strong> to save the file, then reply to the message Little Puddings sent you and attach it, or</li>
+        <li>Tap <strong>Copy my details</strong> and paste them into your reply.</li>
+      </ol>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="primary" onclick="downloadFile()" style="flex:none">Download my details</button>
+      <button class="ghost" onclick="copyCode()">Copy my details</button>
+    </div>
+    <textarea class="codebox" id="codebox" readonly style="display:none"></textarea>
+    <p class="hint" id="copymsg" style="margin-top:10px"></p>
+    <p style="margin-top:16px"><button class="ghost" onclick="backToForm()">Go back and change something</button></p>
+  </div>
+</div>
+
+<script>
+"use strict";
+var FIELDS=['first','surname','preferred','dob','sex','address','homephone',
+  'c1label','c1name','c1mobile','c1email','c1work','c1workphone',
+  'c2label','c2name','c2mobile','c2email','c2work','c2workphone',
+  'doctorname','doctorphone','ec1name','ec1phone','ec2name','ec2phone',
+  'school','schoolphone','allergies','dietary','alert'];
+var CHILD_ID='';
+
+function val(id){ var e=document.getElementById(id); return e?e.value.trim():''; }
+function setVal(id,v){ var e=document.getElementById(id); if(e&&v!=null) e.value=v; }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function fmtToday(){ var d=new Date(); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
+
+function b64encode(obj){ return btoa(unescape(encodeURIComponent(JSON.stringify(obj)))); }
+function b64decode(str){ return JSON.parse(decodeURIComponent(escape(atob(str)))); }
+
+/* Pre-fill from the personalised link Little Puddings sends (#d=...) */
+(function prefill(){
+  document.getElementById('todayLabel').textContent=fmtToday();
+  try{
+    var h=location.hash||'';
+    if(h.indexOf('#d=')===0){
+      var data=b64decode(h.slice(3));
+      CHILD_ID=data.id||'';
+      FIELDS.forEach(function(f){ if(f in data) setVal(f,data[f]); });
+      var nm=(data.preferred||data.first||'').trim();
+      if(nm) document.getElementById('greeting').textContent='Please check '+nm+"'s details below.";
+    }
+  }catch(e){ /* ignore a bad link, form still works blank */ }
+})();
+
+function collect(){
+  var child={}; FIELDS.forEach(function(f){ child[f]=val(f); });
+  return { v:1, type:'lp_parent_update', id:CHILD_ID, submittedBy:val('submittedBy'), submittedDate:todayISO(), child:child };
+}
+function payloadName(){
+  var s=(val('surname')||val('first')||'child').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+  return 'little-puddings-'+s+'-update.json';
+}
+
+function finish(){
+  var err=document.getElementById('err');
+  if(!val('first')){ err.textContent='Please enter your child\u2019s first name.'; document.getElementById('first').focus(); return; }
+  if(!val('submittedBy')){ err.textContent='Please add your name at the bottom.'; document.getElementById('submittedBy').focus(); return; }
+  if(!document.getElementById('confirmTick').checked){ err.textContent='Please tick the box to confirm the details are correct.'; return; }
+  err.textContent='';
+  window._payload=collect();
+  document.getElementById('formArea').style.display='none';
+  document.getElementById('savebar').style.display='none';
+  document.getElementById('done').style.display='block';
+  window.scrollTo(0,0);
+}
+function backToForm(){
+  document.getElementById('done').style.display='none';
+  document.getElementById('formArea').style.display='block';
+  document.getElementById('savebar').style.display='flex';
+  window.scrollTo(0,0);
+}
+function downloadFile(){
+  var blob=new Blob([JSON.stringify(window._payload,null,2)],{type:'application/json'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=payloadName(); a.click();
+  document.getElementById('copymsg').textContent='Saved. Now attach that file to your reply to Little Puddings.';
+}
+function copyCode(){
+  var code='LPUPD1:'+b64encode(window._payload);
+  var box=document.getElementById('codebox');
+  box.style.display='block'; box.value=code; box.select();
+  var ok=false; try{ ok=document.execCommand('copy'); }catch(e){}
+  if(navigator.clipboard){ navigator.clipboard.writeText(code).then(function(){},function(){}); ok=true; }
+  document.getElementById('copymsg').textContent = ok
+    ? 'Copied. Paste it into your reply to Little Puddings.'
+    : 'Select the text above, copy it, and paste it into your reply.';
+}
+</script>
+</body>
+</html>
