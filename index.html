@@ -167,6 +167,7 @@
   .fireblank{font-size:13px;color:var(--ink);padding:6px 0;border-bottom:1px dotted #BDBBB6}
   .firenobody{font-size:13px;color:var(--grey);font-style:italic;padding:14px 0}
   .firefoot{margin-top:12px;border-top:1px solid var(--line);padding-top:6px;font-size:11px;color:var(--grey);display:flex;justify-content:space-between}
+  .buildfoot{margin-top:26px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--grey);text-align:center;line-height:1.5}
   @media print{ .firepage{page-break-after:always} .firechild{break-inside:avoid}
     .firemed{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .fireday{-webkit-print-color-adjust:exact;print-color-adjust:exact} }
@@ -278,6 +279,8 @@
       <h2>Staff <span class="count" id="staffCount"></span></h2>
       <div id="staffList"></div>
     </section>
+
+    <div class="buildfoot no-print" id="buildFoot"></div>
   </div>
 </div>
 
@@ -302,6 +305,8 @@
 </div>
 
 <script>
+/* ---------- build stamp (bump this whenever you upload a new version) ---------- */
+var BUILD='2026-11-05a';
 /* ---------- band configuration (edit colours here if you like) ---------- */
 const BANDS = [
   { name:'Under 1s', color:'#C0392B' },
@@ -367,7 +372,7 @@ function allergyBanner(c){ return [c.allergies, c.alert, c.medication&&('Meds: '
 
 /* ---------- persistence ---------- */
 const LS='lp_emergency_db_v1';
-function persist(){ try{ localStorage.setItem(LS, JSON.stringify(data));
+function persist(){ try{ data.savedByBuild=BUILD; localStorage.setItem(LS, JSON.stringify(data));
   flag('Saved to this device'); }catch(e){ flag('Autosave unavailable, use Save data file'); } }
 function flag(t){ const el=document.getElementById('savedtag'); el.textContent=t;
   clearTimeout(flag._t); flag._t=setTimeout(()=>el.textContent='',2500); }
@@ -1156,7 +1161,7 @@ function fireDayPage(day,isFirst){
   if(staff.length){ h+='<div class="firegrid">'+staff.map(fireStaffBlock).join('')+'</div>'; }
   else h+='<div class="firenone">No staff hours set for a '+esc(day)+'. Set working days on each staff record.</div>';
   h+='</div>';
-  h+='<div class="firefoot"><span>Little Puddings, Lincoln LN6 0UL</span><span>Confidential, contains personal data &#183; '+esc(fmtDate(todayISO()))+'</span></div>';
+  h+='<div class="firefoot"><span>Little Puddings, Lincoln LN6 0UL &#183; v'+esc(BUILD)+'</span><span>Confidential, contains personal data &#183; printed '+esc(fmtDate(todayISO()))+'</span></div>';
   h+='</div>'; return h;
 }
 function buildFireBagDocHTML(){
@@ -1942,7 +1947,10 @@ function applyImport(){
 }
 
 /* ---------- init ---------- */
-loadLS(); ensureModel(); renderLists(); lockApp();
+function showBuild(){ var el=document.getElementById('buildFoot'); if(!el) return;
+  el.innerHTML='Little Puddings Child Hub &nbsp;&#183;&nbsp; version '+esc(BUILD)+' &nbsp;&#183;&nbsp; '+esc(fmtDate(todayISO()))+
+    '<br><span style="font-size:11px">If this version number is older than the one you just uploaded, you are seeing a cached copy: hard refresh the page (hold Shift and reload).</span>'; }
+loadLS(); ensureModel(); renderLists(); showBuild(); lockApp();
 </script>
 </body>
 </html>
