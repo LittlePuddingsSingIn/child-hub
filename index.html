@@ -168,7 +168,7 @@
   .firenobody{font-size:13px;color:var(--grey);font-style:italic;padding:14px 0}
   .firefoot{margin-top:12px;border-top:1px solid var(--line);padding-top:6px;font-size:11px;color:var(--grey);display:flex;justify-content:space-between}
   .buildfoot{margin-top:26px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--grey);text-align:center;line-height:1.5}
-  @media print{ .firepage{page-break-after:always} .firechild{break-inside:avoid}
+  @media print{ .firepage{page-break-before:always} .firebag .firepage:first-child{page-break-before:avoid} .firechild{break-inside:avoid}
     .firemed{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .fireday{-webkit-print-color-adjust:exact;print-color-adjust:exact} }
 
@@ -204,14 +204,25 @@
 <body>
 
 <div id="gate" class="no-print">
-  <div class="gatecard" style="max-width:440px">
+  <div class="gatecard">
     <div class="gatebrand">Little Puddings</div>
     <h1>Child Hub</h1>
-    <p class="gatesub">Confidential. Enter your PIN to continue.</p>
-    <input id="gatePin" type="password" inputmode="numeric" maxlength="8" placeholder="PIN" autocomplete="off" onkeydown="if(event.key==='Enter')tryUnlock()" style="width:100%;font-size:20px;letter-spacing:.3em;text-align:center;margin-bottom:12px">
-    <button class="primary big" style="width:100%" onclick="tryUnlock()">Enter</button>
+    <p class="gatesub">Welcome. Choose how you are signing in. Confidential throughout.</p>
+    <div class="gaterow">
+      <div class="gatebox" id="gateManagerBox">
+        <h3>Setting manager</h3>
+        <p>The full hub: children, staff, availability, documents and settings.</p>
+        <input id="gatePinMgr" type="password" inputmode="numeric" maxlength="8" placeholder="Manager PIN" autocomplete="off" onkeydown="if(event.key==='Enter')tryUnlock('manager')">
+        <button class="primary big" onclick="tryUnlock('manager')">Sign in as manager</button>
+      </div>
+      <div class="gatebox" id="gateDeputyBox">
+        <h3>Deputy</h3>
+        <p>Emergency contact details only, for picking up or covering. No access to the rest.</p>
+        <input id="gatePinDep" type="password" inputmode="numeric" maxlength="8" placeholder="Deputy PIN" autocomplete="off" onkeydown="if(event.key==='Enter')tryUnlock('deputy')">
+        <button class="big" onclick="tryUnlock('deputy')">Sign in as deputy</button>
+      </div>
+    </div>
     <div id="gateErr" class="gateerr"></div>
-    <p style="font-size:12px;color:var(--grey);margin-top:14px">The deputy PIN opens the emergency contact details. The manager PIN opens the full hub.</p>
   </div>
 </div>
 
@@ -226,7 +237,10 @@
 <div id="manager">
   <div class="bar no-print">
     <div class="wrap">
-      <button class="primary" onclick="openForm('child')">+ Add child</button>
+      <button class="ghost" onclick="showLanding()">Home</button>
+      <button class="primary" onclick="showChildren()">Children</button>
+      <button class="primary" onclick="showStaff()">Staff</button>
+      <button onclick="openForm('child')">+ Add child</button>
       <button onclick="openForm('staff')">+ Add staff</button>
       <button class="primary" onclick="generate('emergency')">Generate emergency document</button>
       <button class="primary" onclick="generate('allergy')">Generate allergy sheet</button>
@@ -235,6 +249,7 @@
       <button class="primary" onclick="openTripPlanner()">Trip register</button>
       <button class="ghost" onclick="openAvailability()">Availability</button>
       <button class="ghost" onclick="openFunding()">Funding</button>
+      <button class="ghost" onclick="openPermissions()">Permissions</button>
       <button class="ghost" onclick="openHolidayPlanner()">Holiday planner</button>
       <button class="ghost" onclick="openReviews()">Reviews</button>
       <button class="ghost" onclick="openChecklist()">Checklists</button>
@@ -254,32 +269,8 @@
   </div>
 
   <div class="wrap">
-    <div id="syncBanner" class="syncbanner no-print">
-      <div class="sbtxt"><b>Working across your laptops?</b> Load your latest data file from OneDrive before you start, then Save it back when you finish, so both machines stay in step.</div>
-      <div class="sbbtns">
-        <button class="primary" onclick="document.getElementById('loadInput').click()">Load data file</button>
-        <button class="ghost" onclick="dismissBanner()">Got it</button>
-      </div>
-    </div>
-    <div class="help no-print">
-      <h3>How this works</h3>
-      <p>Enter each child and staff member once. For attendance, tick the days and set a from and to time; the document writes it up for you (for example, <b>Tuesday – Friday 7.45–15.45</b>). Then generate the <b>emergency document</b>, the <b>allergy sheet</b>, or a populated <b>record form</b> per child to send home for parents to check. Each one can be <b>printed</b>, <b>saved as PDF</b>, or <b>downloaded as Word</b>. Set your rates once under <b>Fees &amp; terms</b> and they print on every record form; use <b>Form</b> next to a child to make just theirs.</p>
-      <p>Everything stays on this device. Use <b>Save data file</b> to keep a backup; <b>Load data file</b> brings it back or moves it to another computer.</p>
-    </div>
-
-    <!-- entry form mounts here -->
+    <!-- landing, lists, forms and panels all mount here -->
     <div id="formMount"></div>
-
-    <section class="group">
-      <h2>Children <span class="count" id="childCount"></span></h2>
-      <div id="childList"></div>
-    </section>
-
-    <section class="group">
-      <h2>Staff <span class="count" id="staffCount"></span></h2>
-      <div id="staffList"></div>
-    </section>
-
     <div class="buildfoot no-print" id="buildFoot"></div>
   </div>
 </div>
@@ -306,7 +297,7 @@
 
 <script>
 /* ---------- build stamp (bump this whenever you upload a new version) ---------- */
-var BUILD='2026-11-05a';
+var BUILD='2026-11-05b';
 /* ---------- band configuration (edit colours here if you like) ---------- */
 const BANDS = [
   { name:'Under 1s', color:'#C0392B' },
@@ -325,12 +316,21 @@ function ageYears(dob,asOf){ if(!dob) return null;
   const d=new Date(dob), t=asOf?new Date(asOf):new Date(); let a=t.getFullYear()-d.getFullYear();
   const m=t.getMonth()-d.getMonth();
   if(m<0||(m===0&&t.getDate()<d.getDate())) a--; return a; }
+// rising 5: a child is classed as school age from the 1 September on or after their 4th birthday
+function schoolStartDate(dob){ if(!dob) return null; var d=new Date(dob);
+  var y=d.getFullYear()+4; var afterSep1 = (d.getMonth()>8)||(d.getMonth()===8 && d.getDate()>1);
+  return new Date(afterSep1?y+1:y, 8, 1); }
+function isSchoolAge(c,asOf){ // true once at school (rising 5), by age, flag, or school-start date
+  var a=ageYears(c&&c.dob?c.dob:c, asOf); if(a!=null && a>=5) return true;
+  if(c && typeof c==='object'){ if(c.atSchool||c.school) return true;
+    var ss=schoolStartDate(c.dob); if(ss){ var t=asOf?new Date(asOf):new Date(); if(t>=ss) return true; } }
+  return false;
+}
 function bandOf(c,asOf){
   const dob = (c && typeof c==='object') ? c.dob : c;
-  const atSchool = (c && typeof c==='object') ? (c.atSchool || !!c.school) : false;
   const a=ageYears(dob,asOf); if(a===null) return 'Under 5s';
   if(a<1) return 'Under 1s';
-  if(atSchool || a>=5) return a<8 ? 'Under 8s' : 'Over 8s';
+  if(isSchoolAge(c,asOf)) return a<8 ? 'Under 8s' : 'Over 8s';
   return 'Under 5s';
 }
 function fmtDate(iso){ if(!iso) return ''; const d=new Date(iso);
@@ -418,39 +418,65 @@ function loadFile(ev){
 }
 
 /* ---------- list rendering ---------- */
-function renderLists(){
-  const ch=data.children.slice().sort((a,b)=> new Date(b.dob||0)-new Date(a.dob||0));
-  const cc=document.getElementById('childList');
-  document.getElementById('childCount').textContent = data.children.length ? '('+data.children.length+')' : '';
-  if(!ch.length){ cc.innerHTML='<div class="empty">No children yet. Use “Add child” to start your list.</div>'; }
+/* ---------- main view model: landing / children / staff ---------- */
+var MAINVIEW='landing';
+function mnt(){ return document.getElementById('formMount'); }
+function showLanding(){ MAINVIEW='landing'; renderMain(); }
+function showChildren(){ MAINVIEW='children'; renderMain(); }
+function showStaff(){ MAINVIEW='staff'; renderMain(); }
+function renderMain(){ if(MAINVIEW==='children') renderChildrenInto(); else if(MAINVIEW==='staff') renderStaffInto(); else renderLandingInto(); }
+// legacy name kept so existing callers refresh the current view
+function renderLists(){ if(MAINVIEW==='children'||MAINVIEW==='staff') renderMain(); }
+function renderLandingInto(){
+  var m=mnt(); var nc=(data.children||[]).length, ns=(data.staff||[]).length;
+  var overdue=(data.children||[]).filter(function(c){return onRoll(c)&&reviewOverdue(c);}).length;
+  m.innerHTML='<div class="formcard" style="margin-bottom:22px"><h2>Welcome</h2>'+
+    '<p style="color:var(--grey);font-size:14px;margin-top:0">This is your central record for Little Puddings. Pick <b>Children</b> or <b>Staff</b> to see your lists, or any button along the top for availability, documents and the rest.</p>'+
+    '<div style="display:flex;gap:12px;flex-wrap:wrap;margin:10px 0 4px">'+
+      '<button class="primary" onclick="showChildren()">View children ('+nc+')</button>'+
+      '<button class="primary" onclick="showStaff()">View staff ('+ns+')</button>'+
+      '<button class="ghost" onclick="openForm(\'child\')">+ Add child</button>'+
+      '<button class="ghost" onclick="openForm(\'staff\')">+ Add staff</button>'+
+    '</div>'+
+    (overdue?('<div style="background:#FBF3DC;border-left:4px solid #D4A017;border-radius:6px;padding:10px 14px;margin-top:12px;font-size:14px"><b>'+overdue+'</b> child'+(overdue===1?'’s details need'+'':'ren’s details need')+' confirming with parents (over six months). Open <b>Reviews</b> to see who.</div>'):'')+
+    '</div>'+
+    '<div class="syncbanner"><div class="sbtxt"><b>Working across your laptops?</b> Load your latest data file from OneDrive before you start, then Save it back when you finish, so both machines stay in step.</div>'+
+      '<div class="sbbtns"><button class="primary" onclick="openOneDrive()">OneDrive</button></div></div>';
+  window.scrollTo(0,0);
+}
+function renderChildrenInto(){
+  var m=mnt(); var ch=(data.children||[]).slice().sort(function(a,b){ return new Date(b.dob||0)-new Date(a.dob||0); });
+  var head='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">Children <span class="count">'+(ch.length?'('+ch.length+')':'')+'</span></h2><span class="spacer" style="flex:1"></span><button class="primary" onclick="openForm(\'child\')">+ Add child</button></div>';
+  var body;
+  if(!ch.length){ body='<div class="empty">No children yet. Use “Add child” to start your list.</div>'; }
   else{
-    const groups=[['ayr','All year round'],['term','Term time only'],['holidays','Holidays only'],['','Basis not set']];
-    let html='';
-    const rowFor=(c)=>{ const b=bandOf(c);
+    var groups=[['ayr','All year round'],['term','Term time only'],['holidays','Holidays only'],['','Basis not set']];
+    var rowFor=function(c){ var b=bandOf(c);
       return '<tr><td><b>'+esc(fullName(c))+'</b>'+(hasAllergyInfo(c)?' <span title="allergy or dietary noted" style="color:var(--burg)">⚠</span>':'')+(reviewOverdue(c)?' <span title="parent review overdue" style="color:var(--burg)">◷</span>':'')+'</td>'+
         '<td><span class="bandpill" style="background:'+bandColor(b)+'">'+b+'</span></td>'+
-        '<td>'+esc(fmtDate(c.dob))+'</td>'+
-        '<td>'+esc(attendsOf(c))+'</td>'+
+        '<td>'+esc(fmtDate(c.dob))+'</td><td>'+esc(attendsOf(c))+'</td>'+
         '<td><div class="rowact"><button class="ghost" onclick="generate(\'record\',\''+c.id+'\')">Form</button><button class="ghost" onclick="openParentLink(\''+c.id+'\')">Link</button><button class="ghost" onclick="editPerson(\''+c.id+'\',\'child\')">Edit</button>'+
         '<button class="danger" onclick="del(\''+c.id+'\',\'child\')">Delete</button></div></td></tr>'; };
-    groups.forEach(g=>{ const rows=ch.filter(c=>(c.basis||'')===g[0]); if(!rows.length) return;
-      html+='<div class="subhead" style="margin-top:10px">'+g[1]+' <span style="color:var(--grey);font-weight:400;font-size:12px">('+rows.length+')</span></div>'+
+    body='';
+    groups.forEach(function(g){ var rows=ch.filter(function(c){return (c.basis||'')===g[0];}); if(!rows.length) return;
+      body+='<div class="subhead" style="margin-top:10px">'+g[1]+' <span style="color:var(--grey);font-weight:400;font-size:12px">('+rows.length+')</span></div>'+
         '<table><thead><tr><th>Name</th><th>Age band</th><th>DOB</th><th>Attends</th><th></th></tr></thead><tbody>'+rows.map(rowFor).join('')+'</tbody></table>';
     });
-    cc.innerHTML=html;
   }
-  const st=data.staff;
-  const sc=document.getElementById('staffList');
-  document.getElementById('staffCount').textContent = st.length ? '('+st.length+')' : '';
-  if(!st.length){ sc.innerHTML='<div class="empty">No staff yet. Use “Add staff” to add yourself and your team.</div>'; }
-  else{
-    sc.innerHTML='<table><thead><tr><th>Name</th><th>Role</th><th>Next of kin</th><th></th></tr></thead><tbody>'+
-      st.map(s=> '<tr><td><b>'+esc(s.name||'')+'</b></td><td>'+esc(s.role||'')+'</td>'+
-        '<td>'+esc([s.nok,s.nokphone].filter(Boolean).join(' · '))+'</td>'+
-        '<td><div class="rowact"><button class="ghost" onclick="openStaffLink(\''+s.id+'\')">Link</button><button class="ghost" onclick="editPerson(\''+s.id+'\',\'staff\')">Edit</button>'+
-        '<button class="danger" onclick="del(\''+s.id+'\',\'staff\')">Delete</button></div></td></tr>').join('')+
-      '</tbody></table>';
-  }
+  m.innerHTML='<div class="formcard">'+head+'<div style="margin-top:12px">'+body+'</div></div>'; window.scrollTo(0,0);
+}
+function renderStaffInto(){
+  var m=mnt(); var st=(data.staff||[]);
+  var head='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">Staff <span class="count">'+(st.length?'('+st.length+')':'')+'</span></h2><span class="spacer" style="flex:1"></span><button class="primary" onclick="openForm(\'staff\')">+ Add staff</button></div>';
+  var body;
+  if(!st.length){ body='<div class="empty">No staff yet. Use “Add staff” to add yourself and your team.</div>'; }
+  else body='<table><thead><tr><th>Name</th><th>Role</th><th>In ratio</th><th>Next of kin</th><th></th></tr></thead><tbody>'+
+    st.map(function(s){ return '<tr><td><b>'+esc(s.name||'')+'</b></td><td>'+esc(s.role||'')+'</td>'+
+      '<td>'+(s.inRatio===false?'<span style="color:var(--grey)">no</span>':'yes')+'</td>'+
+      '<td>'+esc([s.nok,s.nokphone].filter(Boolean).join(' · '))+'</td>'+
+      '<td><div class="rowact"><button class="ghost" onclick="openStaffLink(\''+s.id+'\')">Link</button><button class="ghost" onclick="editPerson(\''+s.id+'\',\'staff\')">Edit</button>'+
+      '<button class="danger" onclick="del(\''+s.id+'\',\'staff\')">Delete</button></div></td></tr>'; }).join('')+'</tbody></table>';
+  m.innerHTML='<div class="formcard">'+head+'<div style="margin-top:12px">'+body+'</div></div>'; window.scrollTo(0,0);
 }
 function fullName(c){ return [c.first,c.surname].filter(Boolean).join(' ') || c.first || c.surname || '(unnamed)'; }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
@@ -512,9 +538,13 @@ function childForm(c,editing){
      fld('f_doctorphone','Doctor telephone',c.doctorphone,'tel')+
      '<div class="subhead">Emergency contacts (other than parent or carer)</div>'+
      fld('f_ec1name','Contact name',c.ec1name)+
+     fld('f_ec1rel','Relationship',c.ec1rel,'text','e.g. Grandparent, friend')+
      fld('f_ec1phone','Contact number',c.ec1phone,'tel')+
+     '<div class="field"></div>'+
      fld('f_ec2name','Contact name',c.ec2name)+
+     fld('f_ec2rel','Relationship',c.ec2rel,'text','e.g. Grandparent, friend')+
      fld('f_ec2phone','Contact number',c.ec2phone,'tel')+
+     '<div class="field"></div>'+
      '<div class="subhead">Attendance</div>'+
      '<div class="field full"><span class="agehint">Tick each day and set the times. Use the second pair of times only for children who come in two blocks, such as before and after school (for example 7.30 to 8.55, then 15.25 to 17.00). Leave it blank for full-day children.</span></div>'+
      '<div class="days"><div class="dayrow hdr"><span>Day</span><span>From</span><span>To</span><span>Then from</span><span>To</span></div>'+
@@ -553,6 +583,15 @@ function childForm(c,editing){
      '<div class="field full"><label for="f_dietary">Dietary requirements</label><input id="f_dietary" value="'+esc(c.dietary||'')+'" placeholder="e.g. Vegetarian, no pork"></div>'+
      '<div class="field full"><label for="f_medication">Regular medication (name, dose, when, reason)</label><input id="f_medication" value="'+esc(c.medication||'')+'" placeholder="e.g. Blue inhaler, 2 puffs as needed"></div>'+
      '<div class="field full"><label for="f_alert">Other medical alert (optional)</label><input id="f_alert" value="'+esc(c.alert||'')+'" placeholder="e.g. Asthma, epilepsy"></div>'+
+     '<div class="subhead">Permissions and consents</div>'+
+     '<div class="field full"><span class="agehint">Record each as given or not, with the date given. These are searchable from the Permissions screen and print on the record form.</span></div>'+
+     '<div class="field full"><div class="days"><div style="display:grid;grid-template-columns:1fr 84px 150px;gap:10px;font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--grey);font-weight:700;padding-bottom:4px"><span>Permission</span><span>Given?</span><span>Date given</span></div>'+
+       PERMISSIONS.map(function(p){ var pv=(c.perms&&c.perms[p.key])||{};
+         return '<div style="display:grid;grid-template-columns:1fr 84px 150px;gap:10px;align-items:center;padding:4px 0;border-bottom:1px dashed var(--line)">'+
+           '<span style="font-size:13px;color:var(--ink)">'+esc(p.label)+'</span>'+
+           '<select id="perm_'+p.key+'">'+['','yes','no'].map(function(o){var L={'':'–','yes':'Yes','no':'No'}[o]; return '<option value="'+o+'"'+((pv.given||'')===o?' selected':'')+'>'+L+'</option>';}).join('')+'</select>'+
+           '<input type="date" id="permd_'+p.key+'" value="'+esc(pv.date||'')+'">'+
+         '</div>'; }).join('')+'</div></div>'+
    '</div>'+
    '<div class="formactions"><button class="primary" onclick="saveChild()">'+(editing?'Save changes':'Add child')+'</button>'+
      '<button class="ghost" onclick="closeForm()">Cancel</button></div></div>';
@@ -563,6 +602,8 @@ function staffForm(s,editing){
    '<div class="grid">'+
      fld('f_name','Name',s.name)+
      fld('f_role','Role',s.role,'text','e.g. Childminder, Apprentice')+
+     '<div class="field"><label for="f_sdob">Date of birth</label><input id="f_sdob" type="date" value="'+esc(s.dob||'')+'"><span class="agehint">For identification in an emergency.</span></div>'+
+     '<div class="field"></div>'+
      '<div class="field full"><label style="display:flex;align-items:center;gap:8px;text-transform:none;font-weight:400;color:var(--ink)"><input type="checkbox" id="f_inratio" '+(s.inRatio!==false?'checked':'')+'> Counts in ratio (untick an apprentice until their suitability is approved by Ofsted)</label></div>'+
      '<div class="subhead">Next of kin</div>'+
      fld('f_nok','Name',s.nok)+
@@ -587,7 +628,7 @@ function saveChild(){
     first:v('f_first'), surname:v('f_surname'), preferred:v('f_preferred'), dob:v('f_dob'),
     sex:v('f_sex'), address:v('f_address'), homephone:v('f_homephone'),
     doctorname:v('f_doctorname'), doctorphone:v('f_doctorphone'),
-    ec1name:v('f_ec1name'), ec1phone:v('f_ec1phone'), ec2name:v('f_ec2name'), ec2phone:v('f_ec2phone'),
+    ec1name:v('f_ec1name'), ec1rel:v('f_ec1rel'), ec1phone:v('f_ec1phone'), ec2name:v('f_ec2name'), ec2rel:v('f_ec2rel'), ec2phone:v('f_ec2phone'),
     c1label:v('f_c1label'), c1name:v('f_c1name'), c1mobile:v('f_c1mobile'), c1work:v('f_c1work'), c1workphone:v('f_c1workphone'), c1email:v('f_c1email'),
     c2label:v('f_c2label'), c2name:v('f_c2name'), c2mobile:v('f_c2mobile'), c2work:v('f_c2work'), c2workphone:v('f_c2workphone'), c2email:v('f_c2email'),
     attendance: DAYS.filter(d=>{const e=document.getElementById('f_on_'+d.slice(0,3));return e&&e.checked;})
@@ -597,7 +638,8 @@ function saveChild(){
     fundHours:v('f_fundhours'), fundBasis:v('f_fundbasis'), fundWeeks:v('f_fundweeks'), fundCode:v('f_fundcode'), fundCodeDate:v('f_fundcodedate'),
     wrap:(document.getElementById('f_wrap')||{}).checked||false, wrapHours:v('f_wraphours'),
     fees: FEE_ROWS.filter(r=>!r.standard && (document.getElementById('f_fee_'+r.key)||{}).checked).map(r=>r.key),
-    allergies:v('f_allergies'), dietary:v('f_dietary'), medication:v('f_medication'), alert:v('f_alert') };
+    allergies:v('f_allergies'), dietary:v('f_dietary'), medication:v('f_medication'), alert:v('f_alert'),
+    perms:(function(){ var o={}; PERMISSIONS.forEach(function(p){ var g=v('perm_'+p.key), d=v('permd_'+p.key); if(g||d) o[p.key]={given:g,date:d}; }); return o; })() };
   if(!rec.first && !rec.surname){ alert('Please enter at least a first name or surname.'); return; }
   var _prev=(data.children||[]).find(function(x){return x.id===rec.id;});
   rec.lastConfirmed = v('f_lastconfirmed') || (_prev&&_prev.lastConfirmed) || '';
@@ -608,7 +650,7 @@ function saveChild(){
 }
 function saveStaff(){
   const rec={ id:v('f_id')||uid(), type:'staff',
-    name:v('f_name'), role:v('f_role'), inRatio:(document.getElementById('f_inratio')||{}).checked!==false, nok:v('f_nok'), nokrel:v('f_nokrel'), nokphone:v('f_nokphone'),
+    name:v('f_name'), role:v('f_role'), dob:v('f_sdob'), inRatio:(document.getElementById('f_inratio')||{}).checked!==false, nok:v('f_nok'), nokrel:v('f_nokrel'), nokphone:v('f_nokphone'),
     hours: DAYS.filter(d=>{const e=document.getElementById('f_on_'+d.slice(0,3));return e&&e.checked;})
         .map(d=>{const ab=d.slice(0,3);return {day:d, from:v('f_from_'+ab), to:v('f_to_'+ab), from2:v('f_from2_'+ab), to2:v('f_to2_'+ab)};}),
     allergies:v('f_allergies'), medication:v('f_medication'), emergency:v('f_emergency'), childrenNote:v('f_children') };
@@ -622,9 +664,26 @@ function editPerson(id,type){ const key=type==='child'?'children':'staff';
 function del(id,type){ const key=type==='child'?'children':'staff';
   const p=data[key].find(x=>x.id===id); const nm = type==='child'? fullName(p) : (p&&p.name);
   if(confirm('Remove '+nm+' from the list?')){ data[key]=data[key].filter(x=>x.id!==id); persist(); markDirty(); renderLists(); } }
-function closeForm(){ document.getElementById('formMount').innerHTML=''; }
+function closeForm(){ renderMain(); }
 
 /* ---------- fees & terms settings ---------- */
+const PERMISSIONS = [
+  {key:'firstaid',             label:'Emergency first aid and medical treatment'},
+  {key:'solecare',             label:'Sole care by an assistant or apprentice (up to 2 hours)'},
+  {key:'photo_routine',        label:'Photos: daily routine'},
+  {key:'photo_tapestry',       label:'Photos: learning in Tapestry'},
+  {key:'photo_display',        label:'Photos: display in the setting'},
+  {key:'photo_coursework',     label:'Photos: staff or apprentice coursework'},
+  {key:'photo_share_tapestry', label:'Photos: shared via Tapestry'},
+  {key:'photo_share_whatsapp', label:'Photos: shared via WhatsApp'},
+  {key:'noticing_optout',      label:'Noticing Room opt-out (handwritten reports)'},
+  {key:'share_setting',        label:'Sharing with another setting'},
+  {key:'pr_seen',              label:'Parental responsibility document seen'},
+  {key:'declarations',         label:'Declarations signed'},
+  {key:'toothbrushing',        label:'Supervised toothbrushing'},
+  {key:'library',              label:'Lending library agreement'},
+];
+function permLabel(key){ var p=PERMISSIONS.find(function(x){return x.key===key;}); return p?p.label:key; }
 const FEE_ROWS = [
   {key:'fullDay',  label:'Full day (Under 5s, 6 hours or more)',     def:'\u00a360.00 per day'},
   {key:'halfDay',  label:'Half day (Under 5s, 6 hours or less)',     def:'\u00a340.00 per session'},
@@ -676,10 +735,10 @@ function availabilityData(asOf){
 function todayISO(){ return new Date().toISOString().slice(0,10); }
 function addMonthsISO(iso,n){ var d=iso?new Date(iso):new Date(); d.setMonth(d.getMonth()+n); return d.toISOString().slice(0,10); }
 function monthLabel(iso){ var d=new Date(iso); return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getFullYear(); }
-function groupBand(c,asOf){ var a=ageYears(c.dob,asOf); var school=(c.atSchool||!!c.school);
+function groupBand(c,asOf){ var a=ageYears(c.dob,asOf);
   if(a===null) return 'threeEY';
   if(a<2) return 'under2'; if(a<3) return 'two';
-  if(school) return a<8?'school':'8plus';
+  if(isSchoolAge(c,asOf)) return a<8?'school':'8plus';
   if(a<5) return 'threeEY'; if(a<8) return 'school'; return '8plus'; }
 function groupData(asOf){
   const days=['Monday','Tuesday','Wednesday','Thursday','Friday'];
@@ -765,34 +824,60 @@ function codeDue(c){ if(!c.fundCode) return false; if(!c.fundCodeDate) return fa
 function codeSoon(c){ if(!c.fundCode||!c.fundCodeDate) return false;
   var due=new Date(c.fundCodeDate+'T23:59:59'), now=new Date();
   return due>=now && (due-now) < 28*24*3600*1000; }
+var FUND={filter:'all'};
 function openFunding(){ var m=document.getElementById('formMount');
-  var kids=(data.children||[]).filter(function(c){ return onRoll(c) && ((c.funding&&c.funding!=='None / private')||c.fundHours||c.fundCode||c.wrap); })
+  var all=(data.children||[]).filter(function(c){ return onRoll(c) && ((c.funding&&c.funding!=='None / private')||c.fundHours||c.fundCode||c.wrap); });
+  var kids=all.filter(function(c){ if(FUND.filter==='standard') return c.fundBasis==='standard'; if(FUND.filter==='stretched') return c.fundBasis==='stretched'; return true; })
     .sort(function(a,b){ return fullName(a).localeCompare(fullName(b)); });
-  var dueN=kids.filter(codeDue).length, soonN=kids.filter(codeSoon).length;
+  var dueN=all.filter(codeDue).length, soonN=all.filter(codeSoon).length;
   function basisLabel(c){ if(c.fundBasis==='stretched') return 'Stretched'+(c.fundWeeks?' ('+c.fundWeeks+' wks)':''); if(c.fundBasis==='standard') return 'Standard (38 wks)'; return ''; }
   function codeCell(c){ if(!c.fundCode) return '<span class="anone">–</span>';
     var tag = codeDue(c)?' <span class="bandpill" style="background:#A13A2A">reconfirm due</span>':(codeSoon(c)?' <span class="bandpill" style="background:#D4A017;color:#2B2A28">due soon</span>':'');
     return esc(c.fundCode)+(c.fundCodeDate?' <span style="color:var(--grey);font-size:12px">by '+esc(fmtDate(c.fundCodeDate))+'</span>':'')+tag; }
-  var rows=kids.map(function(c){
+  function rowFor(c){
     return '<tr><td><b>'+esc(fullName(c))+'</b></td>'+
       '<td>'+esc(fundingModelShort(c))+'</td>'+
       '<td style="text-align:center">'+(c.fundHours?esc(c.fundHours):'<span class="anone">–</span>')+'</td>'+
       '<td>'+(basisLabel(c)||'<span class="anone">–</span>')+'</td>'+
       '<td>'+(c.wrap?('Yes'+(c.wrapHours?' ('+esc(c.wrapHours)+'h)':'')):'<span class="anone">–</span>')+'</td>'+
       '<td>'+codeCell(c)+'</td>'+
-      '<td><button class="ghost" onclick="editPerson(\''+c.id+'\',\'child\')">Edit</button></td></tr>';
-  }).join('');
+      '<td><button class="ghost" onclick="editPerson(\''+c.id+'\',\'child\')">Edit</button></td></tr>'; }
+  var groups=[['Under 5s','Under 5s'],['Under 8s','School age (under 8)'],['Over 8s','Over 8s']];
+  var tables='';
+  groups.forEach(function(g){ var rows=kids.filter(function(c){return bandOf(c)===g[0];}); if(!rows.length) return;
+    var hrs=rows.reduce(function(a,c){return a+(parseFloat(c.fundHours)||0);},0);
+    tables+='<div class="subhead" style="margin-top:12px">'+g[1]+' <span style="color:var(--grey);font-weight:400;font-size:12px">('+rows.length+', '+hrs+' funded hrs/wk)</span></div>'+
+      '<table><thead><tr><th>Child</th><th>Model</th><th>Hours</th><th>Basis</th><th>Wrap</th><th>Eligibility code</th><th></th></tr></thead><tbody>'+rows.map(rowFor).join('')+'</tbody></table>'; });
   var totalHrs=kids.reduce(function(a,c){ return a+(parseFloat(c.fundHours)||0); },0);
+  function fb(val,label){ return '<button class="'+(FUND.filter===val?'primary':'ghost')+'" onclick="FUND.filter=\''+val+'\';openFunding()">'+label+'</button>'; }
   m.innerHTML='<div class="formcard"><h2>Funding at a glance</h2>'+
-    '<p style="color:var(--grey);font-size:13px;margin-top:0">Every child on a funded entitlement, so you can check hours, model, standard or stretched, and codes in one place. Your forms stay the record; this is the quick look.</p>'+
+    '<p style="color:var(--grey);font-size:13px;margin-top:0">Every child on a funded entitlement, grouped by age, so you can check hours, model, standard or stretched, and codes in one place. Your forms stay the record; this is the quick look.</p>'+
     (dueN||soonN ? '<div style="background:'+(dueN?'#F4DEDA':'#FBF3DC')+';border-left:4px solid '+(dueN?'#A13A2A':'#D4A017')+';border-radius:6px;padding:10px 14px;margin:6px 0;font-size:14px">'+(dueN?('<strong>'+dueN+'</strong> eligibility code'+(dueN===1?'':'s')+' need reconfirming now. '):'')+(soonN?('<strong>'+soonN+'</strong> due within the month.'):'')+'</div>' : '')+
-    (kids.length ? '<p style="margin:6px 0;font-size:13px">'+kids.length+' funded children · '+totalHrs+' funded hours a week in total</p>'+
-      '<table><thead><tr><th>Child</th><th>Model</th><th>Hours</th><th>Basis</th><th>Wrap</th><th>Eligibility code</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>'
-      : '<div class="empty">No funded children recorded yet. Add funding on a child’s record.</div>')+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">'+fb('all','All')+fb('standard','Standard only')+fb('stretched','Stretched only')+'</div>'+
+    (kids.length ? '<p style="margin:6px 0;font-size:13px">'+kids.length+' funded children shown · '+totalHrs+' funded hours a week in total</p>'+tables
+      : '<div class="empty">No funded children to show'+(FUND.filter!=='all'?' for this filter':'')+'.</div>')+
     '<div class="formactions" style="margin-top:14px"><button class="ghost" onclick="closeForm()">Close</button></div></div>';
   m.scrollIntoView({behavior:'smooth',block:'start'});
 }
-var AV={tab:'now', date:null, adults:1, staff:1};
+/* ---------- permissions search ---------- */
+var PERMVIEW={key:'photo_share_whatsapp'};
+function openPermissions(){ var m=document.getElementById('formMount');
+  var key=PERMVIEW.key; var kids=(data.children||[]).filter(function(c){return onRoll(c);}).sort(function(a,b){return fullName(a).localeCompare(fullName(b));});
+  function val(c){ var pv=(c.perms&&c.perms[key])||{}; return pv.given||''; }
+  var yes=kids.filter(function(c){return val(c)==='yes';}), no=kids.filter(function(c){return val(c)==='no';}), none=kids.filter(function(c){return !val(c);});
+  function list(arr,colour){ if(!arr.length) return '<span class="anone">none</span>';
+    return arr.map(function(c){ var pv=(c.perms&&c.perms[key])||{}; return '<span style="display:inline-block;border:1px solid '+colour+';border-radius:20px;padding:2px 10px;margin:3px 4px 0 0;font-size:13px">'+esc(fullName(c))+(pv.date?' <span style="color:var(--grey);font-size:11px">'+esc(fmtDate(pv.date))+'</span>':'')+'</span>'; }).join(''); }
+  var opts=PERMISSIONS.map(function(p){ return '<option value="'+p.key+'"'+(p.key===key?' selected':'')+'>'+esc(p.label)+'</option>'; }).join('');
+  m.innerHTML='<div class="formcard"><h2>Permissions</h2>'+
+    '<p style="color:var(--grey);font-size:13px;margin-top:0">Search your children by a permission, for example who has consented to photos being shared. Set each child’s answers on their record.</p>'+
+    '<div class="field" style="max-width:420px"><label for="pm_sel">Permission</label><select id="pm_sel" onchange="PERMVIEW.key=this.value;openPermissions()">'+opts+'</select></div>'+
+    '<div style="margin-top:12px"><div class="subhead">Yes <span style="color:var(--grey);font-weight:400;font-size:12px">('+yes.length+')</span></div><div>'+list(yes,'#1A7A4A')+'</div></div>'+
+    '<div style="margin-top:10px"><div class="subhead">No <span style="color:var(--grey);font-weight:400;font-size:12px">('+no.length+')</span></div><div>'+list(no,'#A13A2A')+'</div></div>'+
+    '<div style="margin-top:10px"><div class="subhead">Not recorded <span style="color:var(--grey);font-weight:400;font-size:12px">('+none.length+')</span></div><div>'+list(none,'#CCCCCC')+'</div></div>'+
+    '<div class="formactions" style="margin-top:14px"><button class="ghost" onclick="closeForm()">Close</button></div></div>';
+  m.scrollIntoView({behavior:'smooth',block:'start'});
+}
+var AV={tab:'now', date:null, adults:4, staff:4, schoolAdults:2};
 var HOL={childId:null, view:'enter'};
 function openAvailability(){ if(!AV.date) AV.date=todayISO(); renderAvail(); }
 function avTabBtn(name,label){ return '<button class="'+(AV.tab===name?'primary':'ghost')+'" onclick="AV.tab=\''+name+'\';renderAvail()">'+label+'</button>'; }
@@ -808,26 +893,30 @@ function renderAvail(){
 }
 function avCellClass(val,limit){ return val>limit?'avover':(val===limit&&val>0?'avfull':'avok'); }
 function avNow(){
-  var adults=AV.adults, asOf=AV.date;
+  var adults=AV.adults, asOf=AV.date, schoolAdults=Math.min(AV.schoolAdults||2, adults);
   var d=availabilityData(asOf), days=d.days, res=d.res;
-  var lim1=adults, lim5=3*adults, lim8=6*adults;
+  var lim1=adults, lim5=3*adults, lim8=6*adults, limSchool=6*schoolAdults;
   function cell(v,l){ return '<td class="'+avCellClass(v,l)+'">'+v+'</td>'; }
   function plain(v){ return '<td>'+v+'</td>'; }
+  // children to stand down to be within every limit, per day
+  function toCancel(x){ var r=res[x]; return Math.max(0, r.u1-lim1, r.u5-lim5, (r.u5+r.s57)-lim8, r.s57-limSchool); }
   var rows='';
   rows+='<tr><td>Under 1 (max '+lim1+')</td>'+days.map(x=>cell(res[x].u1,lim1)).join('')+plain(lim1)+'</tr>';
   rows+='<tr><td>Under 5s, early years (max '+lim5+')</td>'+days.map(x=>cell(res[x].u5,lim5)).join('')+plain(lim5)+'</tr>';
-  rows+='<tr><td>School age (5 to 7)</td>'+days.map(x=>plain(res[x].s57)).join('')+plain('')+'</tr>';
-  rows+='<tr><td>Aged 8+</td>'+days.map(x=>plain(res[x].a8)).join('')+plain('')+'</tr>';
+  rows+='<tr><td>School age (5 to 7, max '+limSchool+')</td>'+days.map(x=>cell(res[x].s57,limSchool)).join('')+plain(limSchool)+'</tr>';
+  rows+='<tr><td>Aged 8+ (no ratio limit)</td>'+days.map(x=>plain(res[x].a8)).join('')+plain('\u2013')+'</tr>';
   rows+='<tr><td><strong>Total under 8 (max '+lim8+')</strong></td>'+days.map(x=>cell(res[x].u5+res[x].s57,lim8)).join('')+plain(lim8)+'</tr>';
   rows+='<tr><td>Spare early-years (under 5)</td>'+days.map(x=>plain(Math.max(0,lim5-res[x].u5))).join('')+plain('')+'</tr>';
   rows+='<tr><td>Spare under 8</td>'+days.map(x=>plain(Math.max(0,lim8-(res[x].u5+res[x].s57)))).join('')+plain('')+'</tr>';
+  rows+='<tr><td><strong>To stand down to be in ratio</strong></td>'+days.map(function(x){ var n=toCancel(x); return '<td'+(n>0?' class="avover"':'')+'>'+(n>0?n:'0')+'</td>'; }).join('')+plain('')+'</tr>';
   return '<p style="color:var(--grey);font-size:13px;margin-top:0">Counts use each child\u2019s age on the date chosen, only if their start date has passed and they have not left. Green has room, cream is full, rose is over.</p>'+
     '<div style="display:flex;gap:16px;flex-wrap:wrap">'+
-      '<div class="field" style="max-width:200px"><label for="av_date">Date to check</label><input id="av_date" type="date" value="'+esc(asOf)+'" onchange="AV.date=this.value;renderAvail()"></div>'+
-      '<div class="field" style="max-width:200px"><label for="av_adults">Adults in ratio</label><input id="av_adults" type="number" min="1" max="6" value="'+adults+'" onchange="AV.adults=parseInt(this.value)||1;renderAvail()"></div>'+
+      '<div class="field" style="max-width:180px"><label for="av_date">Date to check</label><input id="av_date" type="date" value="'+esc(asOf)+'" onchange="AV.date=this.value;renderAvail()"></div>'+
+      '<div class="field" style="max-width:150px"><label for="av_adults">Adults in ratio</label><input id="av_adults" type="number" min="1" max="6" value="'+adults+'" onchange="AV.adults=parseInt(this.value)||1;renderAvail()"></div>'+
+      '<div class="field" style="max-width:220px"><label for="av_sch">Practitioners for school-age (5 to 8)</label><input id="av_sch" type="number" min="1" max="'+adults+'" value="'+schoolAdults+'" onchange="AV.schoolAdults=parseInt(this.value)||1;renderAvail()"><span class="agehint">Caps school-age places, keeping the rest for under 5s (sibling continuity).</span></div>'+
     '</div>'+
     '<table class="htable" style="margin-top:10px"><tr><th>Age group</th>'+days.map(x=>'<th>'+x.slice(0,3)+'</th>').join('')+'<th>Limit</th></tr>'+rows+'</table>'+
-    '<p style="color:var(--grey);font-size:12px;margin-top:8px">Limits are '+adults+' adult(s) \u00d7 6 under 8, 3 under 5, 1 under 1. School-age children count toward under 8 but not the under-5 limit.</p>';
+    '<p style="color:var(--grey);font-size:12px;margin-top:8px">Limits are '+adults+' adult(s) \u00d7 6 under 8, 3 under 5, 1 under 1. School-age children count toward under 8 but not the under-5 limit, and are capped at '+schoolAdults+' practitioner(s) worth ('+limSchool+'). Over 8s have no ratio limit but must not affect the care of the under 8s and under 5s. A rising 5 counts as school age from the September after their 4th birthday; a child leaves ratio on their 8th birthday.</p>';
 }
 function avForecast(){
   var adults=AV.adults, lim5=3*adults, lim8=6*adults;
@@ -881,38 +970,43 @@ function codpRatioEditor(){ var r=codpRatios();
       '<div class="field"><label for="rt_sch">School age (1 to ?)</label><input id="rt_sch" type="number" min="1" value="'+r.school+'" onchange="setRatio(\'ratSchool\',this.value)"></div>'+
     '</div></details>'; }
 function setRatio(key,val){ data.settings=data.settings||{}; data.settings[key]=Math.max(1,parseInt(val,10)||1); persist(); markDirty(); renderAvail(); }
+/* slot-based counts (wStart, wEnd in minutes) */
+function cmCountsSlot(asOf,day,wStart,wEnd){ var c={u1:0,u5:0,u8:0};
+  (data.children||[]).forEach(function(ch){ if(!onRoll(ch,asOf)) return; var rec=(ch.attendance||[]).find(function(a){return a.day===day;}); if(!rec) return; if(!presentInWindow(rec,wStart,wEnd)) return;
+    var b=bandOf(ch,asOf); if(b==='Under 1s'){c.u1++;c.u5++;c.u8++;} else if(b==='Under 5s'){c.u5++;c.u8++;} else if(b==='Under 8s'){c.u8++;} }); return c; }
+function codpCountsSlot(asOf,day,wStart,wEnd){ var c={under2:0,two:0,threeEY:0,school:0};
+  (data.children||[]).forEach(function(ch){ if(!onRoll(ch,asOf)) return; var rec=(ch.attendance||[]).find(function(a){return a.day===day;}); if(!rec) return; if(!presentInWindow(rec,wStart,wEnd)) return;
+    var b=groupBand(ch,asOf); if(c[b]!==undefined) c[b]++; }); return c; }
+function staffInSlot(asOf,day,wStart,wEnd){ var n=0; (data.staff||[]).forEach(function(s){ if(s.inRatio===false) return; var rec=(s.hours||[]).find(function(a){return a.day===day;}); if(!rec) return; if(presentInWindow(rec,wStart,wEnd)) n++; }); return n; }
+function covSlots(){ var out=[]; for(var m=450;m<=1020;m+=30) out.push(m); return out; } // 07:30 .. 17:00 starts, 30-min blocks to 17:30
+function minToHm(mins){ var h=Math.floor(mins/60), mm=mins%60; return (h<10?'0':'')+h+':'+(mm<10?'0':'')+mm; }
 function avCover(){
-  var asOf=AV.date, W=covWindows(); var s=data.settings||{};
+  var asOf=AV.date;
   var days=['Monday','Tuesday','Wednesday','Thursday','Friday'];
   var staffCount=(data.staff||[]).filter(function(x){return x.inRatio!==false;}).length;
-  function minToHm(mins){ var h=Math.floor(mins/60), m=mins%60; return (h<10?'0':'')+h+':'+(m<10?'0':'')+m; }
+  var slots=covSlots();
   function covCell(req,have){ var gap=have-req;
     var cls = gap<0 ? 'avover' : (gap===0 && req>0 ? 'avfull' : 'avok');
-    var txt = req+' / '+have + (gap<0? ' (short '+(-gap)+')' : '');
-    return '<td class="'+cls+'">'+txt+'</td>'; }
+    return '<td class="'+cls+'">'+req+' / '+have+(gap<0?' (short '+(-gap)+')':'')+'</td>'; }
   function lens(title, reqFn, note){
     var h='<p style="font-weight:600;color:var(--green);margin:16px 0 4px">'+title+'</p>'+
-      '<table class="htable"><tr><th>Window</th>'+days.map(x=>'<th>'+x.slice(0,3)+'</th>').join('')+'</tr>';
-    [['am','Morning (to '+minToHm(W.amEnd)+')'],['pm','Afternoon (from '+minToHm(W.pmStart)+')']].forEach(function(win){
-      h+='<tr><td>'+win[1]+'</td>'+days.map(function(day){
-        var r=reqFn(asOf,day,win[0]); var have=staffInWindow(asOf,day,win[0]);
-        return covCell(r,have); }).join('')+'</tr>';
-    });
+      '<table class="htable"><tr><th>Time</th>'+days.map(x=>'<th>'+x.slice(0,3)+'</th>').join('')+'</tr>';
+    slots.forEach(function(st){ var en=st+30;
+      h+='<tr><td>'+minToHm(st)+'–'+minToHm(en)+'</td>'+days.map(function(day){
+        var r=reqFn(asOf,day,st,en); var have=staffInSlot(asOf,day,st,en);
+        return covCell(r,have); }).join('')+'</tr>'; });
     h+='</table><p style="color:var(--grey);font-size:12px;margin:4px 0 0">'+note+' Each cell is staff needed / staff on shift; rose means short.</p>';
     return h; }
-  var cmReq=function(asOf,day,win){ return cmStaffRequired(cmCountsWindow(asOf,day,win)); };
-  var codpReq=function(asOf,day,win){ return codpStaffMixed(codpCountsWindow(asOf,day,win),codpRatios()); };
-  return '<p style="color:var(--grey);font-size:13px;margin-top:0">Who you need against who is on shift, split into the morning and afternoon school-run windows, from each child’s and each staff member’s actual times. '+staffCount+' staff are counted in ratio. Mark apprentices as counting only once approved, on their staff record.</p>'+
+  var cmReq=function(asOf,day,st,en){ return cmStaffRequired(cmCountsSlot(asOf,day,st,en)); };
+  var codpReq=function(asOf,day,st,en){ return codpStaffMixed(codpCountsSlot(asOf,day,st,en),codpRatios()); };
+  return '<p style="color:var(--grey);font-size:13px;margin-top:0">Who you need against who is on shift, in 30-minute blocks across the day (7.30 to 5.30), from each child’s and each staff member’s actual times. So you can see, for example, 3 needed first thing and a 4th only from later, easing off as children leave. '+staffCount+' staff are counted in ratio.</p>'+
     '<div style="display:flex;gap:16px;flex-wrap:wrap">'+
-      '<div class="field" style="max-width:190px"><label for="cov_date">Date to check</label><input id="cov_date" type="date" value="'+esc(asOf)+'" onchange="AV.date=this.value;renderAvail()"></div>'+
-      '<div class="field" style="max-width:150px"><label for="cov_am">Morning ends</label><input id="cov_am" type="time" value="'+esc(s.covAmEnd||'09:00')+'" onchange="setCov(\'covAmEnd\',this.value)"></div>'+
-      '<div class="field" style="max-width:150px"><label for="cov_pm">Afternoon starts</label><input id="cov_pm" type="time" value="'+esc(s.covPmStart||'15:00')+'" onchange="setCov(\'covPmStart\',this.value)"></div>'+
+      '<div class="field" style="max-width:200px"><label for="cov_date">Date to check</label><input id="cov_date" type="date" value="'+esc(asOf)+'" onchange="AV.date=this.value;renderAvail()"></div>'+
     '</div>'+
     lens('Childminder ratios (your registration)', cmReq, 'Needs enough adults for 1:6 under 8, 1:3 under 5 and 1:1 under 1, whichever bites hardest.')+
     lens('CODP group ratios (planning), with age mixing', codpReq, 'Uses the group bands with older children filling younger spare places first.')+
-    '<p style="color:var(--grey);font-size:12px;margin-top:10px">A child with no times on a ticked day is treated as in all day. Staff with no times set the same. Set each person’s times on their record for the windows to be exact.</p>';
+    '<p style="color:var(--grey);font-size:12px;margin-top:10px">A child in at any point inside a block counts for that block. A child or staff member with no times on a ticked day is treated as in all day, so set everyone’s times on their record for the blocks to be exact.</p>';
 }
-function setCov(key,val){ data.settings=data.settings||{}; data.settings[key]=val; persist(); markDirty(); renderAvail(); }
 function avEnq(){
   var days=['Monday','Tuesday','Wednesday','Thursday','Friday'];
   return '<p style="color:var(--grey);font-size:13px;margin-top:0">Enter an enquiry and this checks, month by month for a year, whether the requested days fit within your childminder ratios, and tells you the earliest you could take the child.</p>'+
@@ -1001,14 +1095,19 @@ function recordFormHTML(c){
      ((c.c2name||c.c2mobile||c.c2work)?('<div style="height:8px"></div>'+recordCarer(c,2)):'');
   h+='<h3 class="rfsec">Doctor\u2019s details</h3><div class="rf2">'+rff('Doctor / surgery',c.doctorname)+rff('Telephone',c.doctorphone)+'</div>';
   h+='<h3 class="rfsec">Emergency contacts (other than parent / guardian / carer)</h3><div class="rf2">'+
-     rff('Contact name',c.ec1name)+rff('Contact number',c.ec1phone)+
-     rff('Contact name',c.ec2name)+rff('Contact number',c.ec2phone)+'</div>';
+     rff('Contact name',[c.ec1name,c.ec1rel&&'('+c.ec1rel+')'].filter(Boolean).join(' '))+rff('Contact number',c.ec1phone)+
+     rff('Contact name',[c.ec2name,c.ec2rel&&'('+c.ec2rel+')'].filter(Boolean).join(' '))+rff('Contact number',c.ec2phone)+'</div>';
   h+='<h3 class="rfsec">Allergies / special diet / health requirements / illnesses</h3>'+rff('',healthText(c));
   h+='<h3 class="rfsec">Contracted hours</h3>'+hoursTable(c)+rff('Funding entitlement',c.funding);
   h+='<h3 class="rfsec">Fees and terms</h3>'+
      '<table class="htable"><tr><th>Service</th><th>Rate</th></tr>'+
        recordFeeTableRows(c).map(r=>'<tr><td>'+esc(r.label)+'</td><td>'+esc(r.rate)+'</td></tr>').join('')+'</table>'+
      '<p class="rfterms" style="margin-top:8px">Your child\u2019s agreed rate is shown above and set out in full in your individual contract. Funded hours are free of charge; any wrap-around hours are listed separately on your invoice. Payment is required for all contracted sessions whether or not your child attends, except absence due to illness within our own household.</p>';
+  h+='<h3 class="rfsec">Permissions and consents</h3>'+
+     '<table class="htable"><tr><th>Permission</th><th style="width:70px">Given</th><th style="width:120px">Date</th></tr>'+
+       PERMISSIONS.map(function(p){ var pv=(c.perms&&c.perms[p.key])||{}; var g=pv.given==='yes'?'Yes':(pv.given==='no'?'No':'\u2013');
+         return '<tr><td>'+esc(p.label)+'</td><td>'+g+'</td><td>'+(pv.date?esc(fmtDate(pv.date)):'')+'</td></tr>'; }).join('')+'</table>'+
+     '<p class="rfterms" style="margin-top:6px">Please tell us of any change to the permissions above.</p>';
   h+='<div class="rfsign">I confirm that the details on this form are correct.<br><br>'+
      'Signed ............................................................. &nbsp; Date ...................... &nbsp; (parent / carer)</div>';
   return h+'</div>';
@@ -1061,8 +1160,8 @@ function wordRecordForm(c){
   if(c.c2name||c.c2mobile||c.c2work) h+='<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-top:6px">'+wordCarerRows(c,2)+'</table>';
   h+=wSec('Doctor\u2019s details')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+wrf2('Doctor / surgery',c.doctorname,'Telephone',c.doctorphone)+'</table>';
   h+=wSec('Emergency contacts (other than parent / guardian / carer)')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+
-     wrf2('Contact name',c.ec1name,'Contact number',c.ec1phone)+
-     wrf2('Contact name',c.ec2name,'Contact number',c.ec2phone)+'</table>';
+     wrf2('Contact name',[c.ec1name,c.ec1rel&&'('+c.ec1rel+')'].filter(Boolean).join(' '),'Contact number',c.ec1phone)+
+     wrf2('Contact name',[c.ec2name,c.ec2rel&&'('+c.ec2rel+')'].filter(Boolean).join(' '),'Contact number',c.ec2phone)+'</table>';
   h+=wSec('Allergies / special diet / health requirements / illnesses')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+wrfFull('',healthText(c))+'</table>';
   h+=wSec('Contracted hours')+wordHoursTable(c)+
      '<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-top:4px">'+wrfFull('Funding entitlement',c.funding)+'</table>';
@@ -1072,6 +1171,12 @@ function wordRecordForm(c){
      '<tr><td style="'+feeTh+'" width="55%">Service</td><td style="'+feeTh+'">Rate</td></tr>'+
      recordFeeTableRows(c).map(r=>'<tr><td style="'+feeTd+'">'+esc(r.label)+'</td><td style="'+feeTd+'">'+esc(r.rate)+'</td></tr>').join('')+'</table>'+
      '<div style="font-family:Arial;font-size:9pt;color:#6B6460;margin-top:6px">Your child\u2019s agreed rate is shown above and set out in full in your individual contract. Funded hours are free of charge; any wrap-around hours are listed separately on your invoice. Payment is required for all contracted sessions whether or not your child attends, except absence due to illness within our own household.</div>';
+  var pTh='font-family:Arial;font-size:9pt;font-weight:bold;background:#E8F1EC;color:#1A7A4A;border:1pt solid #cccccc;padding:4px 8px;text-align:left';
+  var pTd='font-family:Arial;font-size:9.5pt;border:1pt solid #cccccc;padding:4px 8px;vertical-align:top';
+  h+=wSec('Permissions and consents')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+
+     '<tr><td style="'+pTh+'">Permission</td><td style="'+pTh+'" width="70">Given</td><td style="'+pTh+'" width="120">Date</td></tr>'+
+     PERMISSIONS.map(function(p){ var pv=(c.perms&&c.perms[p.key])||{}; var g=pv.given==='yes'?'Yes':(pv.given==='no'?'No':'–');
+       return '<tr><td style="'+pTd+'">'+esc(p.label)+'</td><td style="'+pTd+'">'+g+'</td><td style="'+pTd+'">'+(pv.date?esc(fmtDate(pv.date)):'')+'</td></tr>'; }).join('')+'</table>';
   h+='<div style="font-family:Arial;font-size:10pt;background:#FBF3DC;border-left:3pt solid #D4A017;padding:8px 10px;margin-top:12px">I confirm that the details on this form are correct.<br><br>'+
      'Signed ............................................................. &#160; Date ...................... &#160; (parent / carer)</div>';
   return h;
@@ -1089,8 +1194,8 @@ function fireContactLines(c){ var o=[];
   if(c.c1workphone) o.push({label:'  work',name:'',num:c.c1workphone.trim()});
   ln(c.c2label||'Parent 2', c.c2name, c.c2mobile);
   if(c.c2workphone) o.push({label:'  work',name:'',num:c.c2workphone.trim()});
-  ln('Emergency', c.ec1name, c.ec1phone);
-  ln('Emergency', c.ec2name, c.ec2phone);
+  ln('Emergency', [c.ec1name,c.ec1rel&&'('+c.ec1rel+')'].filter(Boolean).join(' '), c.ec1phone);
+  ln('Emergency', [c.ec2name,c.ec2rel&&'('+c.ec2rel+')'].filter(Boolean).join(' '), c.ec2phone);
   return o; }
 function fireChildBlock(c){
   var lines=fireContactLines(c);
@@ -1212,10 +1317,13 @@ function staffHTML(s){
   if(s.childrenNote) h+='<div class="row"><span class="lbl">Children:</span><span>'+esc(s.childrenNote)+'</span><span class="ph"></span></div>';
   h+='</div>'; return h;
 }
+// emergency document groups into three: Under 5s / Under 8s / Over 8s (babies fold into Under 5s)
+const DOCBANDS = [ {name:'Under 5s',color:'#1A7A4A'}, {name:'Under 8s',color:'#D17A22'}, {name:'Over 8s',color:'#2E6DA4'} ];
+function docBandOf(c){ var b=bandOf(c); return b==='Under 1s' ? 'Under 5s' : b; }
 function groupChildren(){
-  const g={}; BANDS.forEach(b=>g[b.name]=[]);
-  data.children.forEach(c=>g[bandOf(c)].push(c));
-  BANDS.forEach(b=>g[b.name].sort((x,y)=>new Date(y.dob||0)-new Date(x.dob||0)));
+  const g={}; DOCBANDS.forEach(b=>g[b.name]=[]);
+  data.children.forEach(c=>g[docBandOf(c)].push(c));
+  DOCBANDS.forEach(b=>g[b.name].sort((x,y)=>new Date(y.dob||0)-new Date(x.dob||0)));
   return g;
 }
 function buildDocHTML(){
@@ -1225,7 +1333,7 @@ function buildDocHTML(){
         '<h1 class="title">In case of Emergency</h1>'+
         '<div class="docsub">Details of next of kin for minded children and staff</div>'+
         '<p class="reviewed">Reviewed: '+(rev?esc(fmtDate(rev)):'____________')+' &nbsp;·&nbsp; Confidential</p>';
-  BANDS.forEach(b=>{ const list=grouped[b.name]; if(!list.length) return;
+  DOCBANDS.forEach(b=>{ const list=grouped[b.name]; if(!list.length) return;
     h+='<div class="bandhead" style="background:'+b.color+'">'+b.name+'</div>';
     list.forEach(c=>h+=childHTML(c)); });
   if(data.children.length===0) h+='<p style="color:var(--grey);font-style:italic">No children added yet.</p>';
@@ -1445,7 +1553,7 @@ function buildWordHTML(){
         '<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:22pt;margin:2px 0">In case of Emergency</div>'+
         '<div style="font-family:Georgia,serif;font-style:italic;color:#6B6460;font-size:11pt;border-bottom:2pt solid #D4A017;padding-bottom:6px">Details of next of kin for minded children and staff</div>'+
         '<div style="font-family:Arial;font-size:9pt;color:#6B6460;margin:6px 0 14px 0">Reviewed: '+(rev?esc(fmtDate(rev)):'____________')+' &#183; Confidential</div>';
-  BANDS.forEach(b=>{ const list=g[b.name]; if(!list.length) return; h+=wBand(b.name,b.color); list.forEach(c=>h+=wChild(c)); });
+  DOCBANDS.forEach(b=>{ const list=g[b.name]; if(!list.length) return; h+=wBand(b.name,b.color); list.forEach(c=>h+=wChild(c)); });
   if(!data.children.length) h+='<p style="font-family:Arial;color:#6B6460;font-style:italic">No children added yet.</p>';
   if(data.staff.length){ h+=wBand('Staff','#6B6460'); data.staff.forEach(s=>h+=wStaff(s)); }
   h+='<div style="font-family:Arial;font-size:8.5pt;color:#6B6460;border-top:1pt solid #cccccc;margin-top:18px;padding-top:6px">Little Puddings, Lincoln LN6 0UL &#160;&#183;&#160; Confidential, contains personal data</div>';
@@ -1552,7 +1660,7 @@ function defaultHoliday(){ return { start:'2026-07-20', weeks:7, cap:null,
   sel:{} }; }
 function ensureModel(){ if(!data.holiday||typeof data.holiday!=='object') data.holiday=defaultHoliday();
   var H=data.holiday; if(!H.start)H.start='2026-07-20'; if(!H.weeks)H.weeks=7; if(!('cap' in H))H.cap=null;
-  if(!Array.isArray(H.closed))H.closed=[]; if(!H.labels)H.labels={}; if(!H.sel)H.sel={};
+  if(!Array.isArray(H.closed))H.closed=[]; if(!H.labels)H.labels={}; if(!H.sel)H.sel={}; if(!H.out)H.out={};
   (data.children||[]).forEach(function(c){ if(!Array.isArray(c.log))c.log=[]; if(!('lastConfirmed' in c))c.lastConfirmed=''; });
   if(!data.trip||typeof data.trip!=='object') data.trip=defaultTrip();
   var T=data.trip; ['date','destination','staff','ratio','transport','times','notes'].forEach(function(k){ if(!(k in T))T[k]=''; }); if(!T.sel)T.sel={};
@@ -1572,10 +1680,23 @@ function holClosed(iso){ return data.holiday.closed.indexOf(iso)>=0; }
 function holLabel(iso){ return data.holiday.labels[iso]||''; }
 function holGroupId(c,iso){ var b=bandOf(c,iso); if(b==='Over 8s') return 's8p'; if(b==='Under 8s') return 's8'; if(b==='Under 1s') return 'u1'; return 'u5'; }
 function holSel(cid){ if(!data.holiday.sel[cid]) data.holiday.sel[cid]={}; return data.holiday.sel[cid]; }
-function holToggle(cid,iso,on){ var s=holSel(cid); if(on)s[iso]=true; else delete s[iso]; persist(); markDirty(); }
-function holChildDays(cid){ var s=data.holiday.sel[cid]||{}; return holAllDays().filter(function(iso){return !holClosed(iso)&&s[iso];}).length; }
-function holWeekAll(cid,wi,on){ var wk=holWeeks()[wi], s=holSel(cid); wk.forEach(function(iso){ if(holClosed(iso))return; if(on)s[iso]=true; else delete s[iso]; }); persist(); markDirty(); renderHol(); }
-function holDayCounts(iso){ var c={u1:0,u5:0,s8:0,s8p:0}; (data.children||[]).forEach(function(ch){ if((data.holiday.sel[ch.id]||{})[iso]) c[holGroupId(ch,iso)]++; }); return c; }
+function holOut(cid){ if(!data.holiday.out) data.holiday.out={}; if(!data.holiday.out[cid]) data.holiday.out[cid]={}; return data.holiday.out[cid]; }
+// all-year-round children attend their contracted weekdays in the holidays automatically, unless ticked out
+function holAuto(child,iso){ if(holClosed(iso)) return false; if((child.basis||'')!=='ayr') return false;
+  return attendsDay(child, HOLDOWFULL[holDow(iso)]); }
+function holIn(child,iso){ if(holClosed(iso)) return false;
+  var sel=(data.holiday.sel[child.id]||{})[iso];
+  var out=(data.holiday.out&&data.holiday.out[child.id]||{})[iso];
+  return !!sel || (holAuto(child,iso) && !out); }
+function holToggle(cid,iso,on){ var ch=(data.children||[]).find(function(x){return x.id===cid;}); var auto=ch?holAuto(ch,iso):false;
+  var s=holSel(cid), o=holOut(cid);
+  if(on){ delete o[iso]; if(auto) delete s[iso]; else s[iso]=true; }
+  else { delete s[iso]; if(auto) o[iso]=true; else delete o[iso]; }
+  persist(); markDirty(); }
+function holChildDays(cid){ var ch=(data.children||[]).find(function(x){return x.id===cid;}); if(!ch) return 0;
+  return holAllDays().filter(function(iso){ return holIn(ch,iso); }).length; }
+function holWeekAll(cid,wi,on){ var wk=holWeeks()[wi]; wk.forEach(function(iso){ if(holClosed(iso))return; holToggle(cid,iso,on); }); renderHol(); }
+function holDayCounts(iso){ var c={u1:0,u5:0,s8:0,s8p:0}; (data.children||[]).forEach(function(ch){ if(holIn(ch,iso)) c[holGroupId(ch,iso)]++; }); return c; }
 function holInRatio(c){ return c.u1+c.u5+c.s8; }
 function holTotal(c){ return c.u1+c.u5+c.s8+c.s8p; }
 function holDot(id){ var g=HOLG[id]; return '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+g.line+';margin-right:6px;vertical-align:middle"></span>'; }
@@ -1613,13 +1734,13 @@ function holEnter(){
   return '<div style="display:flex;gap:18px;flex-wrap:wrap"><div style="flex:0 0 250px;min-width:210px;max-height:470px;overflow:auto">'+list+'</div><div style="flex:1;min-width:300px">'+right+'</div></div>';
 }
 function holGridFor(c){
-  var s=data.holiday.sel[c.id]||{};
   return holWeeks().map(function(wk,wi){
     var cells=wk.map(function(iso){
       var lbl=holLabel(iso);
       var head='<div style="font-size:10px;text-transform:uppercase;color:var(--grey)">'+HOLDOWFULL[holDow(iso)]+'</div><div style="font-weight:700">'+holUK(iso)+'</div>'+(lbl?'<div style="font-size:10px;color:var(--gold);font-weight:700">'+esc(lbl)+'</div>':'');
       if(holClosed(iso)) return '<td style="background:#eef2ea;color:#9aa39c;vertical-align:top;text-align:left">'+head+'<div style="font-size:11px;margin-top:4px">Closed</div></td>';
-      return '<td style="vertical-align:top;text-align:left">'+head+'<label style="display:flex;gap:5px;align-items:center;margin-top:6px;text-transform:none;font-weight:400;font-size:12px"><input type="checkbox" '+(s[iso]?'checked':'')+' onchange="holToggle(\''+c.id+'\',\''+iso+'\',this.checked);renderHol()"> in</label></td>';
+      var inn=holIn(c,iso), auto=holAuto(c,iso);
+      return '<td style="vertical-align:top;text-align:left'+(auto?';background:#F3F8F4':'')+'">'+head+'<label style="display:flex;gap:5px;align-items:center;margin-top:6px;text-transform:none;font-weight:400;font-size:12px"><input type="checkbox" '+(inn?'checked':'')+' onchange="holToggle(\''+c.id+'\',\''+iso+'\',this.checked);renderHol()"> in'+(auto?' <span style="color:var(--grey);font-size:10px">(usual)</span>':'')+'</label></td>';
     }).join('');
     return '<div style="font-size:12px;color:var(--green);font-weight:700;margin:8px 0 3px">Week '+(wi+1)+' · '+holUK(wk[0])+' to '+holUK(wk[4])+'</div>'+
       '<table class="htable"><tr>'+cells+'</tr></table>'+
@@ -1652,7 +1773,7 @@ function buildHolidayDocHTML(){
   var rev=document.getElementById('reviewedInput').value;
   var totalCD=0, peak=0, peakDay=null, uniq={};
   holAllDays().forEach(function(iso){ if(holClosed(iso))return; var c=holDayCounts(iso); totalCD+=holTotal(c); var ir=holInRatio(c);
-    if(ir>peak){peak=ir;peakDay=iso;} (data.children||[]).forEach(function(ch){ if((data.holiday.sel[ch.id]||{})[iso]) uniq[ch.id]=1; }); });
+    if(ir>peak){peak=ir;peakDay=iso;} (data.children||[]).forEach(function(ch){ if(holIn(ch,iso)) uniq[ch.id]=1; }); });
   var h='<div class="brand">Little Puddings</div>'+
     '<h1 class="title">Holiday care plan</h1>'+
     '<div class="docsub">Summer '+esc(H.start.slice(0,4))+', who is in each day and the ratio numbers</div>'+
@@ -1666,7 +1787,7 @@ function buildHolidayDocHTML(){
       var lbl=holLabel(iso);
       if(holClosed(iso)){ h+='<tr><td><strong>'+HOLDOW[holDow(iso)]+'</strong> '+holUK(iso)+(lbl?'<br><span style="font-size:10px">'+esc(lbl)+'</span>':'')+'</td><td colspan="7" style="color:#9aa39c">Closed</td></tr>'; return; }
       var cnt=holDayCounts(iso), ir=holInRatio(cnt), over=cap&&ir>cap, u1over=cnt.u1>1;
-      var names=(data.children||[]).filter(function(ch){return (data.holiday.sel[ch.id]||{})[iso];}).sort(function(a,b){return fullName(a).localeCompare(fullName(b));})
+      var names=(data.children||[]).filter(function(ch){return holIn(ch,iso);}).sort(function(a,b){return fullName(a).localeCompare(fullName(b));})
         .map(function(ch){ return holDot(holGroupId(ch,iso))+esc(fullName(ch)); }).join(', ');
       h+='<tr><td><strong>'+HOLDOW[holDow(iso)]+'</strong> '+holUK(iso)+(lbl?'<br><span style="font-size:10px;color:#D4A017">'+esc(lbl)+'</span>':'')+'</td>'+
         '<td style="font-weight:700'+(over?';color:#A13A2A':'')+'">'+ir+(over?' (over)':'')+'</td>'+
@@ -1719,19 +1840,28 @@ function lockApp(){ unlocked=false; emergencyOnly=false;
   document.getElementById('preview').style.display='none';
   document.getElementById('manager').style.display='none';
   var g=document.getElementById('gate'); g.style.display='flex';
-  var pin=document.getElementById('gatePin'); if(pin) pin.value='';
+  ['gatePinMgr','gatePinDep'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
   var err=document.getElementById('gateErr'); if(err) err.textContent='';
   window.scrollTo(0,0);
 }
 function unlockManager(){ unlocked=true; emergencyOnly=false;
-  document.getElementById('gate').style.display='none'; showManager(); }
-function tryUnlock(){ var p=(document.getElementById('gatePin').value||'').trim();
-  if(!p) return;
+  document.getElementById('gate').style.display='none'; MAINVIEW='landing'; showManager(); renderMain(); }
+function tryUnlock(role){
+  var id = role==='deputy' ? 'gatePinDep' : 'gatePinMgr';
+  var p=(document.getElementById(id).value||'').trim();
+  var err=document.getElementById('gateErr');
+  if(!p){ if(err) err.textContent='Please enter the '+(role==='deputy'?'deputy':'manager')+' PIN.'; return; }
   var h=pinHash(p);
-  if(h===currentPinHash('manager')){ unlockManager(); }
-  else if(h===currentPinHash('deputy')){ openEmergencyPublic(); }
-  else { document.getElementById('gateErr').textContent='That PIN was not recognised.';
-    var el=document.getElementById('gatePin'); el.value=''; el.focus(); } }
+  if(role==='deputy'){
+    if(h===currentPinHash('deputy')){ openEmergencyPublic(); return; }
+    if(h===currentPinHash('manager')){ if(err) err.textContent='That is the manager PIN. Use the manager box to sign in to the full hub.'; return; }
+  } else {
+    if(h===currentPinHash('manager')){ unlockManager(); return; }
+    if(h===currentPinHash('deputy')){ if(err) err.textContent='That is the deputy PIN. Use the deputy box for the emergency contacts.'; return; }
+  }
+  if(err) err.textContent='That PIN was not recognised.';
+  var el=document.getElementById(id); el.value=''; el.focus();
+}
 function openEmergencyPublic(){ emergencyOnly=true; unlocked=false;
   document.getElementById('gate').style.display='none';
   currentDoc='emergency'; currentChildId=null;
