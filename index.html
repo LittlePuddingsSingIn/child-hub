@@ -140,6 +140,37 @@
 
   @media(max-width:680px){.grid{grid-template-columns:1fr}.row{grid-template-columns:80px 1fr}.row .ph{grid-column:2;text-align:left}}
 
+  /* Fire bag contact sheet */
+  .firepage{padding:2px 0 10px}
+  .firehdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid var(--gold);padding-bottom:6px}
+  .firetitle{font-family:Georgia,serif;color:var(--green);font-size:24px;margin:2px 0 0}
+  .fireday{font-family:Georgia,serif;font-weight:700;font-size:26px;color:#fff;background:var(--green);border-radius:8px;padding:6px 18px;white-space:nowrap}
+  .firemeta{font-size:12px;color:var(--grey);margin:6px 0}
+  .firecount{font-size:13px;font-weight:700;background:var(--pale);border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin:6px 0 12px}
+  .firegrid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+  .firechild{border:1px solid var(--line);border-left:4px solid var(--green);border-radius:8px;padding:8px 10px;break-inside:avoid}
+  .firename{font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .fireage{font-weight:400;font-style:italic;color:var(--grey);font-size:12px;white-space:nowrap}
+  .firetbl{width:100%;border-collapse:collapse;margin-top:4px}
+  .firetbl td{font-size:13px;padding:1px 0;vertical-align:top}
+  .firetbl .fl{font-weight:700;color:var(--grey);white-space:nowrap;width:78px;padding-right:6px}
+  .firetbl .fn{padding-right:8px}
+  .firetbl .fp{text-align:right;white-space:nowrap;font-weight:700}
+  .firemed{margin-top:5px;font-size:12px;font-weight:700;color:var(--burg);background:var(--rose);border-radius:4px;padding:3px 7px;text-align:center}
+  .firemeds{margin-top:4px;font-size:12px;font-weight:700;color:#8f4415;background:#FBE3CE;border-radius:4px;padding:3px 7px}
+  .firestaff{border-left-color:var(--grey);background:#F7F6F3}
+  .firestaffsec{margin-top:12px;border-top:2px dashed var(--line);padding-top:8px}
+  .fireextra{margin-top:4px;font-size:11px;color:var(--grey)}
+  .firenone{font-size:12px;font-style:italic;color:var(--grey);margin-top:4px}
+  .fireadhoc{margin-top:12px;border-top:2px dashed var(--line);padding-top:8px}
+  .fireadhochead{font-family:Georgia,serif;color:var(--green);font-size:14px;font-weight:700;margin-bottom:6px}
+  .fireblank{font-size:13px;color:var(--ink);padding:6px 0;border-bottom:1px dotted #BDBBB6}
+  .firenobody{font-size:13px;color:var(--grey);font-style:italic;padding:14px 0}
+  .firefoot{margin-top:12px;border-top:1px solid var(--line);padding-top:6px;font-size:11px;color:var(--grey);display:flex;justify-content:space-between}
+  @media print{ .firepage{page-break-after:always} .firechild{break-inside:avoid}
+    .firemed{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .fireday{-webkit-print-color-adjust:exact;print-color-adjust:exact} }
+
   /* Access gate */
   #gate{position:fixed;inset:0;z-index:100;background:linear-gradient(160deg,#1A7A4A,#155e39);display:none;align-items:center;justify-content:center;padding:20px}
   .gatecard{background:#fff;border-radius:14px;max-width:720px;width:100%;padding:28px 30px;box-shadow:0 10px 40px rgba(0,0,0,.28)}
@@ -199,8 +230,10 @@
       <button class="primary" onclick="generate('emergency')">Generate emergency document</button>
       <button class="primary" onclick="generate('allergy')">Generate allergy sheet</button>
       <button class="primary" onclick="generate('record')">Generate record forms</button>
+      <button class="primary" onclick="generate('firebag')">Fire bag sheet</button>
       <button class="primary" onclick="openTripPlanner()">Trip register</button>
       <button class="ghost" onclick="openAvailability()">Availability</button>
+      <button class="ghost" onclick="openFunding()">Funding</button>
       <button class="ghost" onclick="openHolidayPlanner()">Holiday planner</button>
       <button class="ghost" onclick="openReviews()">Reviews</button>
       <button class="ghost" onclick="openChecklist()">Checklists</button>
@@ -255,10 +288,10 @@
       <button class="ghost" id="previewBackBtn" onclick="previewBack()">‹ Back to data</button>
       <span class="spacer"></span>
       <span id="previewMgrCtrls" style="display:flex;align-items:center;gap:10px">
-      <label style="text-transform:none;font-weight:400;color:var(--grey);display:flex;align-items:center;gap:6px">
+      <label id="reviewedWrap" style="text-transform:none;font-weight:400;color:var(--grey);display:flex;align-items:center;gap:6px">
         Reviewed:&nbsp;<input id="reviewedInput" type="date" onchange="renderDoc()" style="padding:6px 8px">
       </label>
-      <button onclick="downloadWord()">Download as Word</button>
+      <button id="wordBtn" onclick="downloadWord()">Download as Word</button>
       </span>
       <button class="primary" onclick="window.print()">Print / Save as PDF</button>
     </div>
@@ -329,8 +362,8 @@ function attendsText(att){
     return label+t1+t2; }).join(', ');
 }
 function attendsOf(c){ const t=attendsText(c.attendance); return t || c.attends || ''; }
-function hasAllergyInfo(c){ return !!(c.allergies||c.dietary||c.alert); }
-function allergyBanner(c){ return [c.allergies, c.alert].filter(Boolean).join(' · '); }
+function hasAllergyInfo(c){ return !!(c.allergies||c.dietary||c.alert||c.medication); }
+function allergyBanner(c){ return [c.allergies, c.alert, c.medication&&('Meds: '+c.medication)].filter(Boolean).join(' · '); }
 
 /* ---------- persistence ---------- */
 const LS='lp_emergency_db_v1';
@@ -496,7 +529,16 @@ function childForm(c,editing){
        ['','ayr','term','holidays'].map(function(k){var L={'':'Not set','ayr':'All year round','term':'Term time only','holidays':'Holidays only'}[k]; return '<option value="'+k+'"'+((c.basis||'')===k?' selected':'')+'>'+L+'</option>';}).join('')+
      '</select><span class="agehint">Groups the children list. Term time only children can still be given the odd holiday day in the Holiday planner.</span></div>'+
      '<div class="subhead">Funding and fees</div>'+
-     '<div class="field full"><label for="f_funding">Funding entitlement</label><input id="f_funding" list="fundingopts" value="'+esc(c.funding||'')+'" placeholder="e.g. Extended 30 hours (working parents)"><datalist id="fundingopts"><option value="None / private"></option><option value="2-year-old funding (15 hours)"></option><option value="Universal 15 hours (3 to 4 year olds)"></option><option value="Extended 30 hours (working parents)"></option><option value="Working parent entitlement (9 months to 2 years)"></option></datalist></div>'+
+     '<div class="field full"><label for="f_funding">Funding entitlement (model)</label><input id="f_funding" list="fundingopts" value="'+esc(c.funding||'')+'" placeholder="e.g. Extended 30 hours (working parents)"><datalist id="fundingopts"><option value="None / private"></option><option value="2-year-old funding (15 hours)"></option><option value="Universal 15 hours (3 to 4 year olds)"></option><option value="Extended 30 hours (working parents)"></option><option value="Working parent entitlement (9 months to 2 years)"></option></datalist></div>'+
+     '<div class="field"><label for="f_fundhours">Funded hours per week</label><input id="f_fundhours" type="number" min="0" max="50" step="0.5" value="'+esc(c.fundHours||'')+'" placeholder="e.g. 15 or 30"></div>'+
+     '<div class="field"><label for="f_fundbasis">Standard or stretched</label><select id="f_fundbasis">'+
+       ['','standard','stretched'].map(function(k){var L={'':'Not set','standard':'Standard (term time, 38 weeks)','stretched':'Stretched (across the year)'}[k]; return '<option value="'+k+'"'+((c.fundBasis||'')===k?' selected':'')+'>'+L+'</option>';}).join('')+
+       '</select></div>'+
+     '<div class="field"><label for="f_fundweeks">Weeks per year (if stretched)</label><input id="f_fundweeks" type="number" min="0" max="52" value="'+esc(c.fundWeeks||'')+'" placeholder="e.g. 51"></div>'+
+     '<div class="field"><label for="f_fundcode">Eligibility code (30h / working parent)</label><input id="f_fundcode" value="'+esc(c.fundCode||'')+'" placeholder="11-digit code" inputmode="numeric"></div>'+
+     '<div class="field"><label for="f_fundcodedate">Code reconfirm by</label><input id="f_fundcodedate" type="date" value="'+esc(c.fundCodeDate||'')+'"><span class="agehint">Working-parent codes must be reconfirmed each term; the funding glance flags any due.</span></div>'+
+     '<div class="field"><label style="display:flex;align-items:center;gap:8px;text-transform:none;font-weight:400;color:var(--ink)"><input type="checkbox" id="f_wrap" '+(c.wrap?'checked':'')+'> Paid wrap-around alongside funding</label></div>'+
+     '<div class="field"><label for="f_wraphours">Wrap-around hours per week</label><input id="f_wraphours" type="number" min="0" max="60" step="0.5" value="'+esc(c.wrapHours||'')+'" placeholder="e.g. 10"></div>'+
      '<div class="field full"><label>Fees that apply (tick all that apply)</label>'+
        '<div class="days">'+FEE_ROWS.filter(r=>!r.standard).map(r=>{ var on=(c.fees||[]).indexOf(r.key)>=0;
          return '<label class="checkline"><input type="checkbox" id="f_fee_'+r.key+'" '+(on?'checked':'')+'><span>'+esc(r.label)+'</span><span class="rate">'+esc(feeRate(r.key))+'</span></label>'; }).join('')+'</div>'+
@@ -504,7 +546,8 @@ function childForm(c,editing){
      '<div class="subhead">Allergies, dietary and medical</div>'+
      '<div class="field full"><label for="f_allergies">Allergies</label><input id="f_allergies" value="'+esc(c.allergies||'')+'" placeholder="e.g. Peanuts, egg"></div>'+
      '<div class="field full"><label for="f_dietary">Dietary requirements</label><input id="f_dietary" value="'+esc(c.dietary||'')+'" placeholder="e.g. Vegetarian, no pork"></div>'+
-     '<div class="field full"><label for="f_alert">Other medical alert (optional)</label><input id="f_alert" value="'+esc(c.alert||'')+'" placeholder="e.g. Asthma, inhaler on site"></div>'+
+     '<div class="field full"><label for="f_medication">Regular medication (name, dose, when, reason)</label><input id="f_medication" value="'+esc(c.medication||'')+'" placeholder="e.g. Blue inhaler, 2 puffs as needed"></div>'+
+     '<div class="field full"><label for="f_alert">Other medical alert (optional)</label><input id="f_alert" value="'+esc(c.alert||'')+'" placeholder="e.g. Asthma, epilepsy"></div>'+
    '</div>'+
    '<div class="formactions"><button class="primary" onclick="saveChild()">'+(editing?'Save changes':'Add child')+'</button>'+
      '<button class="ghost" onclick="closeForm()">Cancel</button></div></div>';
@@ -515,6 +558,7 @@ function staffForm(s,editing){
    '<div class="grid">'+
      fld('f_name','Name',s.name)+
      fld('f_role','Role',s.role,'text','e.g. Childminder, Apprentice')+
+     '<div class="field full"><label style="display:flex;align-items:center;gap:8px;text-transform:none;font-weight:400;color:var(--ink)"><input type="checkbox" id="f_inratio" '+(s.inRatio!==false?'checked':'')+'> Counts in ratio (untick an apprentice until their suitability is approved by Ofsted)</label></div>'+
      '<div class="subhead">Next of kin</div>'+
      fld('f_nok','Name',s.nok)+
      fld('f_nokrel','Relationship',s.nokrel)+
@@ -524,6 +568,7 @@ function staffForm(s,editing){
      '<div class="field full"><span class="agehint">Tick each working day and set the times. Use the second pair only for a split shift, such as a morning block and a later block on the same day.</span></div>'+
      '<div class="days"><div class="dayrow hdr"><span>Day</span><span>From</span><span>To</span><span>Then from</span><span>To</span></div>'+
        DAYS.map(d=>dayRow(d, (s.hours||[]).find(a=>a.day===d))).join('')+'</div>'+
+     '<div class="field full"><label for="f_allergies">Allergies (optional)</label><input id="f_allergies" value="'+esc(s.allergies||'')+'" placeholder="e.g. Penicillin, latex"></div>'+
      '<div class="field full"><label for="f_medication">Current medication (optional)</label><input id="f_medication" value="'+esc(s.medication||'')+'"></div>'+
      '<div class="field full"><label for="f_emergency">Emergency contacts</label><textarea id="f_emergency" placeholder="Name and phone, one per line">'+esc(s.emergency||'')+'</textarea></div>'+
      '<div class="field full"><label for="f_children">Their own children (optional)</label><textarea id="f_children" placeholder="Names, schools, year groups">'+esc(s.childrenNote||'')+'</textarea></div>'+
@@ -544,8 +589,10 @@ function saveChild(){
         .map(d=>{const ab=d.slice(0,3);return {day:d, from:v('f_from_'+ab), to:v('f_to_'+ab), from2:v('f_from2_'+ab), to2:v('f_to2_'+ab)};}),
     atSchool:(document.getElementById('f_atschool')||{}).checked||false,
     school:v('f_school'), schoolphone:v('f_schoolphone'), start:v('f_start'), leave:v('f_leave'), funding:v('f_funding'), basis:v('f_basis'),
+    fundHours:v('f_fundhours'), fundBasis:v('f_fundbasis'), fundWeeks:v('f_fundweeks'), fundCode:v('f_fundcode'), fundCodeDate:v('f_fundcodedate'),
+    wrap:(document.getElementById('f_wrap')||{}).checked||false, wrapHours:v('f_wraphours'),
     fees: FEE_ROWS.filter(r=>!r.standard && (document.getElementById('f_fee_'+r.key)||{}).checked).map(r=>r.key),
-    allergies:v('f_allergies'), dietary:v('f_dietary'), alert:v('f_alert') };
+    allergies:v('f_allergies'), dietary:v('f_dietary'), medication:v('f_medication'), alert:v('f_alert') };
   if(!rec.first && !rec.surname){ alert('Please enter at least a first name or surname.'); return; }
   var _prev=(data.children||[]).find(function(x){return x.id===rec.id;});
   rec.lastConfirmed = v('f_lastconfirmed') || (_prev&&_prev.lastConfirmed) || '';
@@ -556,10 +603,10 @@ function saveChild(){
 }
 function saveStaff(){
   const rec={ id:v('f_id')||uid(), type:'staff',
-    name:v('f_name'), role:v('f_role'), nok:v('f_nok'), nokrel:v('f_nokrel'), nokphone:v('f_nokphone'),
+    name:v('f_name'), role:v('f_role'), inRatio:(document.getElementById('f_inratio')||{}).checked!==false, nok:v('f_nok'), nokrel:v('f_nokrel'), nokphone:v('f_nokphone'),
     hours: DAYS.filter(d=>{const e=document.getElementById('f_on_'+d.slice(0,3));return e&&e.checked;})
         .map(d=>{const ab=d.slice(0,3);return {day:d, from:v('f_from_'+ab), to:v('f_to_'+ab), from2:v('f_from2_'+ab), to2:v('f_to2_'+ab)};}),
-    medication:v('f_medication'), emergency:v('f_emergency'), childrenNote:v('f_children') };
+    allergies:v('f_allergies'), medication:v('f_medication'), emergency:v('f_emergency'), childrenNote:v('f_children') };
   if(!rec.name){ alert('Please enter a name.'); return; }
   upsert('staff',rec); closeForm();
 }
@@ -636,16 +683,120 @@ function groupData(asOf){
   return {days:days,res:res};
 }
 
+/* ---------- staffing / cover helpers ---------- */
+/* AM/PM windows: a person is "in" a window if any of their time blocks overlaps it.
+   amEnd / pmStart are the school-run cutoffs, in minutes from midnight (editable in Settings). */
+function covWindows(){ var s=data.settings||{};
+  return { amEnd: hmToMin(s.covAmEnd||'09:00'), pmStart: hmToMin(s.covPmStart||'15:00') }; }
+function hmToMin(t){ if(!t) return null; var p=String(t).split(':'); return parseInt(p[0],10)*60+parseInt(p[1]||'0',10); }
+function blocksFor(rec){ // rec = a child (attendance) or staff (hours) day record
+  if(!rec) return [];
+  var out=[]; if(rec.from||rec.to) out.push([hmToMin(rec.from),hmToMin(rec.to)]);
+  if(rec.from2||rec.to2) out.push([hmToMin(rec.from2),hmToMin(rec.to2)]); return out; }
+function overlaps(block,wStart,wEnd){ var f=block[0], t=block[1];
+  if(f==null && t==null) return true; // no times given, treat as present all day
+  if(f==null) f=0; if(t==null) t=24*60;
+  return f < wEnd && t > wStart; }
+function presentInWindow(dayRec,wStart,wEnd){ var bl=blocksFor(dayRec);
+  if(!bl.length) return true; // ticked day with no times = in all day
+  return bl.some(function(b){ return overlaps(b,wStart,wEnd); }); }
+
+/* childminder counts for one window (am or pm) on one weekday */
+function cmCountsWindow(asOf,day,win){ var W=covWindows();
+  var wStart = win==='am'? 0 : W.pmStart, wEnd = win==='am'? W.amEnd : 24*60;
+  var c={u1:0,u5:0,u8:0};
+  (data.children||[]).forEach(function(ch){ if(!onRoll(ch,asOf)) return;
+    var rec=(ch.attendance||[]).find(function(a){return a.day===day;}); if(!rec) return;
+    if(!presentInWindow(rec,wStart,wEnd)) return;
+    var b=bandOf(ch,asOf);
+    if(b==='Under 1s'){ c.u1++; c.u5++; c.u8++; }
+    else if(b==='Under 5s'){ c.u5++; c.u8++; }
+    else if(b==='Under 8s'){ c.u8++; } });
+  return c; }
+/* CODP group-band counts for one window */
+function codpCountsWindow(asOf,day,win){ var W=covWindows();
+  var wStart = win==='am'? 0 : W.pmStart, wEnd = win==='am'? W.amEnd : 24*60;
+  var c={under2:0,two:0,threeEY:0,school:0};
+  (data.children||[]).forEach(function(ch){ if(!onRoll(ch,asOf)) return;
+    var rec=(ch.attendance||[]).find(function(a){return a.day===day;}); if(!rec) return;
+    if(!presentInWindow(rec,wStart,wEnd)) return;
+    var b=groupBand(ch,asOf); if(c[b]!==undefined) c[b]++; });
+  return c; }
+/* staff on shift in a window = staff with a working block overlapping it AND counted in ratio */
+function staffInWindow(asOf,day,win){ var W=covWindows();
+  var wStart = win==='am'? 0 : W.pmStart, wEnd = win==='am'? W.amEnd : 24*60;
+  var n=0;
+  (data.staff||[]).forEach(function(s){ if(s.inRatio===false) return;
+    var rec=(s.hours||[]).find(function(a){return a.day===day;}); if(!rec) return;
+    if(presentInWindow(rec,wStart,wEnd)) n++; });
+  return n; }
+
+/* childminder staff required: enough adults for under-8 (1:6), under-5 (1:3) and under-1 (1:1),
+   plus the two-practitioner cap on school-age care does not add staff, it limits it.
+   Required adults = max of the three per-limit needs. */
+function cmStaffRequired(c){
+  var need8=Math.ceil(c.u8/6), need5=Math.ceil(c.u5/3), need1=Math.ceil(c.u1/1);
+  return Math.max(need8,need5,need1,(c.u8>0?1:0)); }
+
+/* CODP staff required with age mixing: older children fill spare places in a younger,
+   stricter ratio first, then the rest are counted in their own band. Youngest band first. */
+function codpStaffMixed(c,ratios){
+  var s1=Math.ceil(c.under2/ratios.under2); var spare1=s1*ratios.under2 - c.under2;
+  var a2=Math.min(c.two,spare1); var rem2=c.two-a2;
+  var s2=Math.ceil(rem2/ratios.two);
+  var spare2=(spare1-a2)+(s2*ratios.two-rem2);
+  var a3=Math.min(c.threeEY,spare2); var rem3=c.threeEY-a3;
+  var s3=Math.ceil(rem3/ratios.threeEY);
+  var sSchool=Math.ceil(c.school/ratios.school);
+  return s1+s2+s3+sSchool; }
+function codpStaffSeparate(c,ratios){
+  return Math.ceil(c.under2/ratios.under2)+Math.ceil(c.two/ratios.two)+
+         Math.ceil(c.threeEY/ratios.threeEY)+Math.ceil(c.school/ratios.school); }
+
+/* ---------- funding glance ---------- */
+function fundingModelShort(c){ var f=(c.funding||'').trim(); return f||'Not set'; }
+function codeDue(c){ if(!c.fundCode) return false; if(!c.fundCodeDate) return false;
+  return new Date() > new Date(c.fundCodeDate+'T23:59:59'); }
+function codeSoon(c){ if(!c.fundCode||!c.fundCodeDate) return false;
+  var due=new Date(c.fundCodeDate+'T23:59:59'), now=new Date();
+  return due>=now && (due-now) < 28*24*3600*1000; }
+function openFunding(){ var m=document.getElementById('formMount');
+  var kids=(data.children||[]).filter(function(c){ return onRoll(c) && ((c.funding&&c.funding!=='None / private')||c.fundHours||c.fundCode||c.wrap); })
+    .sort(function(a,b){ return fullName(a).localeCompare(fullName(b)); });
+  var dueN=kids.filter(codeDue).length, soonN=kids.filter(codeSoon).length;
+  function basisLabel(c){ if(c.fundBasis==='stretched') return 'Stretched'+(c.fundWeeks?' ('+c.fundWeeks+' wks)':''); if(c.fundBasis==='standard') return 'Standard (38 wks)'; return ''; }
+  function codeCell(c){ if(!c.fundCode) return '<span class="anone">–</span>';
+    var tag = codeDue(c)?' <span class="bandpill" style="background:#A13A2A">reconfirm due</span>':(codeSoon(c)?' <span class="bandpill" style="background:#D4A017;color:#2B2A28">due soon</span>':'');
+    return esc(c.fundCode)+(c.fundCodeDate?' <span style="color:var(--grey);font-size:12px">by '+esc(fmtDate(c.fundCodeDate))+'</span>':'')+tag; }
+  var rows=kids.map(function(c){
+    return '<tr><td><b>'+esc(fullName(c))+'</b></td>'+
+      '<td>'+esc(fundingModelShort(c))+'</td>'+
+      '<td style="text-align:center">'+(c.fundHours?esc(c.fundHours):'<span class="anone">–</span>')+'</td>'+
+      '<td>'+(basisLabel(c)||'<span class="anone">–</span>')+'</td>'+
+      '<td>'+(c.wrap?('Yes'+(c.wrapHours?' ('+esc(c.wrapHours)+'h)':'')):'<span class="anone">–</span>')+'</td>'+
+      '<td>'+codeCell(c)+'</td>'+
+      '<td><button class="ghost" onclick="editPerson(\''+c.id+'\',\'child\')">Edit</button></td></tr>';
+  }).join('');
+  var totalHrs=kids.reduce(function(a,c){ return a+(parseFloat(c.fundHours)||0); },0);
+  m.innerHTML='<div class="formcard"><h2>Funding at a glance</h2>'+
+    '<p style="color:var(--grey);font-size:13px;margin-top:0">Every child on a funded entitlement, so you can check hours, model, standard or stretched, and codes in one place. Your forms stay the record; this is the quick look.</p>'+
+    (dueN||soonN ? '<div style="background:'+(dueN?'#F4DEDA':'#FBF3DC')+';border-left:4px solid '+(dueN?'#A13A2A':'#D4A017')+';border-radius:6px;padding:10px 14px;margin:6px 0;font-size:14px">'+(dueN?('<strong>'+dueN+'</strong> eligibility code'+(dueN===1?'':'s')+' need reconfirming now. '):'')+(soonN?('<strong>'+soonN+'</strong> due within the month.'):'')+'</div>' : '')+
+    (kids.length ? '<p style="margin:6px 0;font-size:13px">'+kids.length+' funded children · '+totalHrs+' funded hours a week in total</p>'+
+      '<table><thead><tr><th>Child</th><th>Model</th><th>Hours</th><th>Basis</th><th>Wrap</th><th>Eligibility code</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>'
+      : '<div class="empty">No funded children recorded yet. Add funding on a child’s record.</div>')+
+    '<div class="formactions" style="margin-top:14px"><button class="ghost" onclick="closeForm()">Close</button></div></div>';
+  m.scrollIntoView({behavior:'smooth',block:'start'});
+}
 var AV={tab:'now', date:null, adults:1, staff:1};
 var HOL={childId:null, view:'enter'};
 function openAvailability(){ if(!AV.date) AV.date=todayISO(); renderAvail(); }
 function avTabBtn(name,label){ return '<button class="'+(AV.tab===name?'primary':'ghost')+'" onclick="AV.tab=\''+name+'\';renderAvail()">'+label+'</button>'; }
 function renderAvail(){
   const m=document.getElementById('formMount');
-  var body = AV.tab==='forecast'?avForecast() : AV.tab==='codp'?avCodp() : AV.tab==='enq'?avEnq() : avNow();
+  var body = AV.tab==='forecast'?avForecast() : AV.tab==='codp'?avCodp() : AV.tab==='cover'?avCover() : AV.tab==='enq'?avEnq() : avNow();
   m.innerHTML='<div class="formcard"><h2>Availability and planning</h2>'+
     '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">'+
-      avTabBtn('now','Now / date check')+avTabBtn('forecast','Forecast')+avTabBtn('codp','Group ratio (CODP)')+avTabBtn('enq','Enquiry')+'</div>'+
+      avTabBtn('now','Now / date check')+avTabBtn('cover','Staffing / cover')+avTabBtn('forecast','Forecast')+avTabBtn('codp','Group ratio (CODP)')+avTabBtn('enq','Enquiry')+'</div>'+
     body+
     '<div class="formactions" style="margin-top:14px"><button class="primary" onclick="exportSpreadsheet()">Export for spreadsheet</button><button class="ghost" onclick="closeForm()">Close</button></div></div>';
   m.scrollIntoView({behavior:'smooth',block:'start'});
@@ -695,18 +846,68 @@ function avForecast(){
 function avCodp(){
   var staff=AV.staff||1, asOf=AV.date;
   var d=groupData(asOf), days=d.days, res=d.res;
-  var ratios={under2:3,two:5,threeEY:8,school:8};
+  var ratios=codpRatios();
   function row(key,label){ var cap=ratios[key]*staff;
     return '<tr><td>'+label+' (max '+cap+')</td>'+days.map(function(x){ var v=res[x][key]; return '<td class="'+avCellClass(v,cap)+'">'+v+'</td>'; }).join('')+'<td>1:'+ratios[key]+'</td></tr>'; }
-  return '<p style="color:var(--grey);font-size:13px;margin-top:0">A what-if for once you are registered on the Childcare on Domestic Premises (group) ratios. Capacity is staff \u00d7 the ratio for each band. This is a planning view, not the childminder limits.</p>'+
+  var reqMix=days.map(function(x){ return codpStaffMixed(res[x],ratios); });
+  var reqSep=days.map(function(x){ return codpStaffSeparate(res[x],ratios); });
+  var reqRow='<tr><td><strong>Staff required (with age mixing)</strong></td>'+reqMix.map(function(v){ return '<td class="'+avCellClass(v,staff)+'"><strong>'+v+'</strong></td>'; }).join('')+'<td></td></tr>';
+  var sepRow='<tr><td style="color:var(--grey);font-style:italic">If bands counted separately</td>'+reqSep.map(function(v){ return '<td style="color:var(--grey);font-style:italic">'+v+'</td>'; }).join('')+'<td></td></tr>';
+  return '<p style="color:var(--grey);font-size:13px;margin-top:0">A what-if for once you are registered on the Childcare on Domestic Premises (group) ratios. Staff required uses age mixing: older children fill spare places in a younger, stricter ratio first, then the rest are counted in their own band. This is a planning view, not the childminder limits.</p>'+
     '<div style="display:flex;gap:16px;flex-wrap:wrap">'+
       '<div class="field" style="max-width:200px"><label for="av_date3">Date to check</label><input id="av_date3" type="date" value="'+esc(asOf)+'" onchange="AV.date=this.value;renderAvail()"></div>'+
-      '<div class="field" style="max-width:200px"><label for="av_staff">Staff in ratio</label><input id="av_staff" type="number" min="1" max="10" value="'+staff+'" onchange="AV.staff=parseInt(this.value)||1;renderAvail()"></div>'+
+      '<div class="field" style="max-width:200px"><label for="av_staff">Staff available</label><input id="av_staff" type="number" min="1" max="10" value="'+staff+'" onchange="AV.staff=parseInt(this.value)||1;renderAvail()"></div>'+
     '</div>'+
     '<table class="htable" style="margin-top:10px"><tr><th>Age group</th>'+days.map(x=>'<th>'+x.slice(0,3)+'</th>').join('')+'<th>Ratio</th></tr>'+
-      row('under2','Under 2')+row('two','Two-year-olds')+row('threeEY','Three and over (EY)')+row('school','School age (5 to 7)')+'</table>'+
-    '<p style="color:var(--grey);font-size:12px;margin-top:8px">Group ratios: under 2 = 1:3, two-year-olds = 1:5, three and over = 1:8, school age = 1:8 (guideline).</p>';
+      row('under2','Under 2')+row('two','Two-year-olds')+row('threeEY','Three and over (EY)')+row('school','School age (5 to 7)')+
+      reqRow+sepRow+'</table>'+
+      codpRatioEditor()+
+    '<p style="color:var(--grey);font-size:12px;margin-top:8px">Only children up to the 1 September after their fifth birthday count in these group ratios; school-age children sit outside them and are added separately, never used to fill early-years places. A cell turns rose where the number on that day is over what your staff can cover.</p>';
 }
+function codpRatios(){ var s=data.settings||{};
+  return { under2:parseInt(s.ratUnder2,10)||3, two:parseInt(s.ratTwo,10)||5,
+           threeEY:parseInt(s.ratThreeEY,10)||8, school:parseInt(s.ratSchool,10)||8 }; }
+function codpRatioEditor(){ var r=codpRatios();
+  return '<details style="margin-top:10px"><summary style="cursor:pointer;color:var(--green);font-size:13px">Edit the group ratios</summary>'+
+    '<div class="grid" style="margin-top:8px">'+
+      '<div class="field"><label for="rt_u2">Under 2 (1 to ?)</label><input id="rt_u2" type="number" min="1" value="'+r.under2+'" onchange="setRatio(\'ratUnder2\',this.value)"></div>'+
+      '<div class="field"><label for="rt_two">Two-year-olds (1 to ?)</label><input id="rt_two" type="number" min="1" value="'+r.two+'" onchange="setRatio(\'ratTwo\',this.value)"></div>'+
+      '<div class="field"><label for="rt_3">Three and over EY (1 to ?)</label><input id="rt_3" type="number" min="1" value="'+r.threeEY+'" onchange="setRatio(\'ratThreeEY\',this.value)"><span class="agehint">8 normally, 13 with a graduate leading (QTS, EYTS or EYPS).</span></div>'+
+      '<div class="field"><label for="rt_sch">School age (1 to ?)</label><input id="rt_sch" type="number" min="1" value="'+r.school+'" onchange="setRatio(\'ratSchool\',this.value)"></div>'+
+    '</div></details>'; }
+function setRatio(key,val){ data.settings=data.settings||{}; data.settings[key]=Math.max(1,parseInt(val,10)||1); persist(); markDirty(); renderAvail(); }
+function avCover(){
+  var asOf=AV.date, W=covWindows(); var s=data.settings||{};
+  var days=['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  var staffCount=(data.staff||[]).filter(function(x){return x.inRatio!==false;}).length;
+  function minToHm(mins){ var h=Math.floor(mins/60), m=mins%60; return (h<10?'0':'')+h+':'+(m<10?'0':'')+m; }
+  function covCell(req,have){ var gap=have-req;
+    var cls = gap<0 ? 'avover' : (gap===0 && req>0 ? 'avfull' : 'avok');
+    var txt = req+' / '+have + (gap<0? ' (short '+(-gap)+')' : '');
+    return '<td class="'+cls+'">'+txt+'</td>'; }
+  function lens(title, reqFn, note){
+    var h='<p style="font-weight:600;color:var(--green);margin:16px 0 4px">'+title+'</p>'+
+      '<table class="htable"><tr><th>Window</th>'+days.map(x=>'<th>'+x.slice(0,3)+'</th>').join('')+'</tr>';
+    [['am','Morning (to '+minToHm(W.amEnd)+')'],['pm','Afternoon (from '+minToHm(W.pmStart)+')']].forEach(function(win){
+      h+='<tr><td>'+win[1]+'</td>'+days.map(function(day){
+        var r=reqFn(asOf,day,win[0]); var have=staffInWindow(asOf,day,win[0]);
+        return covCell(r,have); }).join('')+'</tr>';
+    });
+    h+='</table><p style="color:var(--grey);font-size:12px;margin:4px 0 0">'+note+' Each cell is staff needed / staff on shift; rose means short.</p>';
+    return h; }
+  var cmReq=function(asOf,day,win){ return cmStaffRequired(cmCountsWindow(asOf,day,win)); };
+  var codpReq=function(asOf,day,win){ return codpStaffMixed(codpCountsWindow(asOf,day,win),codpRatios()); };
+  return '<p style="color:var(--grey);font-size:13px;margin-top:0">Who you need against who is on shift, split into the morning and afternoon school-run windows, from each child’s and each staff member’s actual times. '+staffCount+' staff are counted in ratio. Mark apprentices as counting only once approved, on their staff record.</p>'+
+    '<div style="display:flex;gap:16px;flex-wrap:wrap">'+
+      '<div class="field" style="max-width:190px"><label for="cov_date">Date to check</label><input id="cov_date" type="date" value="'+esc(asOf)+'" onchange="AV.date=this.value;renderAvail()"></div>'+
+      '<div class="field" style="max-width:150px"><label for="cov_am">Morning ends</label><input id="cov_am" type="time" value="'+esc(s.covAmEnd||'09:00')+'" onchange="setCov(\'covAmEnd\',this.value)"></div>'+
+      '<div class="field" style="max-width:150px"><label for="cov_pm">Afternoon starts</label><input id="cov_pm" type="time" value="'+esc(s.covPmStart||'15:00')+'" onchange="setCov(\'covPmStart\',this.value)"></div>'+
+    '</div>'+
+    lens('Childminder ratios (your registration)', cmReq, 'Needs enough adults for 1:6 under 8, 1:3 under 5 and 1:1 under 1, whichever bites hardest.')+
+    lens('CODP group ratios (planning), with age mixing', codpReq, 'Uses the group bands with older children filling younger spare places first.')+
+    '<p style="color:var(--grey);font-size:12px;margin-top:10px">A child with no times on a ticked day is treated as in all day. Staff with no times set the same. Set each person’s times on their record for the windows to be exact.</p>';
+}
+function setCov(key,val){ data.settings=data.settings||{}; data.settings[key]=val; persist(); markDirty(); renderAvail(); }
 function avEnq(){
   var days=['Monday','Tuesday','Wednesday','Thursday','Friday'];
   return '<p style="color:var(--grey);font-size:13px;margin-top:0">Enter an enquiry and this checks, month by month for a year, whether the requested days fit within your childminder ratios, and tells you the earliest you could take the child.</p>'+
@@ -765,7 +966,7 @@ function saveSettings(){ var o={}; FEE_ROWS.forEach(r=>{ o[r.key]=v('s_'+r.key);
 /* ---------- record form ---------- */
 function recordList(){ return currentChildId ? data.children.filter(c=>c.id===currentChildId)
   : data.children.slice().sort((a,b)=>fullName(a).localeCompare(fullName(b))); }
-function healthText(c){ return [c.allergies,c.dietary,c.alert].filter(Boolean).join('; '); }
+function healthText(c){ return [c.allergies&&('Allergies: '+c.allergies),c.dietary&&('Diet: '+c.dietary),c.medication&&('Medication: '+c.medication),c.alert].filter(Boolean).join('; '); }
 function rff(label,val){ return '<div class="rff">'+(label?'<span class="rfl">'+esc(label)+'</span>':'')+
   '<span class="rfv'+(val?'':' empty')+'">'+(val?esc(val):'&nbsp;')+'</span></div>'; }
 function recordCarer(c,n){
@@ -876,6 +1077,93 @@ function buildRecordWordHTML(){
   return list.map((c,i)=>(i?'<p style="page-break-before:always;margin:0"></p>':'')+wordRecordForm(c)).join('');
 }
 
+/* ---------- fire bag contact sheet (one page per weekday, ad hoc holiday children separate) ---------- */
+function fireContactLines(c){ var o=[];
+  function ln(label,name,num){ if(name||num) o.push({label:label,name:(name||'').trim(),num:(num||'').trim()}); }
+  ln(c.c1label||'Parent 1', c.c1name, c.c1mobile);
+  if(c.c1workphone) o.push({label:'  work',name:'',num:c.c1workphone.trim()});
+  ln(c.c2label||'Parent 2', c.c2name, c.c2mobile);
+  if(c.c2workphone) o.push({label:'  work',name:'',num:c.c2workphone.trim()});
+  ln('Emergency', c.ec1name, c.ec1phone);
+  ln('Emergency', c.ec2name, c.ec2phone);
+  return o; }
+function fireChildBlock(c){
+  var lines=fireContactLines(c);
+  var alerts=[]; if(c.allergies) alerts.push('Allergies: '+c.allergies); if(c.alert) alerts.push(c.alert);
+  var h='<div class="firechild">'+
+    '<div class="firename">'+esc(fullName(c).toUpperCase())+(c.preferred?' <span style="font-weight:400;font-style:italic">(“'+esc(c.preferred)+'”)</span>':'')+
+      '<span class="fireage">'+esc(ageShort(c))+'</span></div>';
+  if(lines.length){ h+='<table class="firetbl">'+lines.map(function(l){
+    return '<tr><td class="fl">'+esc(l.label)+'</td><td class="fn">'+esc(l.name)+'</td><td class="fp">'+esc(l.num)+'</td></tr>'; }).join('')+'</table>'; }
+  else h+='<div class="firenone">No contact numbers recorded</div>';
+  if(alerts.length) h+='<div class="firemed">'+esc(alerts.join('  ·  ').toUpperCase())+'</div>';
+  if(c.medication) h+='<div class="firemeds">Medication: '+esc(c.medication)+'</div>';
+  var extra=[];
+  if(c.doctorname||c.doctorphone) extra.push('GP: '+[c.doctorname,c.doctorphone].filter(Boolean).join(' '));
+  if(c.school) extra.push('School: '+c.school);
+  if(extra.length) h+='<div class="fireextra">'+esc(extra.join('  ·  '))+'</div>';
+  h+='</div>'; return h;
+}
+function fireStaffBlock(s){
+  var h='<div class="firechild firestaff">'+
+    '<div class="firename">'+esc((s.name||'').toUpperCase())+'<span class="fireage">'+esc(s.role||'')+'</span></div>';
+  var lines=[];
+  if(s.nok||s.nokphone) lines.push({label:'Next of kin',name:[s.nok,s.nokrel&&'('+s.nokrel+')'].filter(Boolean).join(' '),num:s.nokphone||''});
+  if(s.emergency) s.emergency.split('\n').filter(function(x){return x.trim();}).forEach(function(line){
+    var parts=line.trim().match(/^(.*?)(\+?[\d\s()]{6,})$/);
+    if(parts) lines.push({label:'Emergency',name:parts[1].trim(),num:parts[2].trim()});
+    else lines.push({label:'Emergency',name:line.trim(),num:''}); });
+  if(lines.length){ h+='<table class="firetbl">'+lines.map(function(l){
+    return '<tr><td class="fl">'+esc(l.label)+'</td><td class="fn">'+esc(l.name)+'</td><td class="fp">'+esc(l.num)+'</td></tr>'; }).join('')+'</table>'; }
+  else h+='<div class="firenone">No next of kin recorded</div>';
+  if(s.allergies) h+='<div class="firemed">'+esc(('Allergies: '+s.allergies).toUpperCase())+'</div>';
+  if(s.medication) h+='<div class="firemeds">Medication: '+esc(s.medication)+'</div>';
+  h+='</div>'; return h;
+}
+function fireStaffOnDay(day){
+  return (data.staff||[]).filter(function(s){ return (s.hours||[]).some(function(a){return a.day===day;}); })
+    .sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); }); }
+function fireBookedOnDay(day){
+  return (data.children||[]).filter(function(c){ return onRoll(c) && attendsDay(c,day); })
+    .sort(function(a,b){ return fullName(a).localeCompare(fullName(b)); }); }
+function fireAdhocOnDay(day){
+  // holiday ad hoc children: a child whose basis is holidays-only, OR any child with a holiday-planner day ticked
+  // that falls on this weekday, and who is NOT on the regular pattern for that day.
+  var dow=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].indexOf(day);
+  var sel=(data.holiday&&data.holiday.sel)||{};
+  var out=[];
+  (data.children||[]).forEach(function(c){ if(!onRoll(c)) return;
+    if(attendsDay(c,day)) return; // already on the regular page for this day
+    var days=sel[c.id]||{}; var has=Object.keys(days).some(function(iso){ return days[iso] && (new Date(iso+'T00:00:00Z').getUTCDay()===dow); });
+    if(has || (c.basis==='holidays')) out.push(c);
+  });
+  return out.sort(function(a,b){ return fullName(a).localeCompare(fullName(b)); }); }
+function fireDayPage(day,isFirst){
+  var booked=fireBookedOnDay(day), adhoc=fireAdhocOnDay(day), staff=fireStaffOnDay(day);
+  var h='<div class="firepage"'+(isFirst?'':' style="page-break-before:always"')+'>'+
+    '<div class="firehdr"><div><div class="brand">Little Puddings</div>'+
+      '<h1 class="firetitle">Fire bag contact sheet</h1></div>'+
+      '<div class="fireday">'+esc(day)+'</div></div>'+
+    '<div class="firemeta">Who is booked in on a '+esc(day)+', with parent, emergency and staff contacts, allergies and medication. Keep in the emergency bag. Works with no phone or tablet.</div>'+
+    '<div class="firecount">Head count: children booked '+booked.length+', staff '+staff.length+' &#9744; &nbsp; children present ______ &nbsp; staff present ______ &nbsp; All accounted for &#9744; &nbsp; Time ________</div>';
+  if(booked.length){ h+='<div class="firegrid">'+booked.map(fireChildBlock).join('')+'</div>'; }
+  else h+='<div class="firenobody">No children booked in on a '+esc(day)+'.</div>';
+  h+='<div class="fireadhoc"><div class="fireadhochead">Holiday / ad hoc children (add by hand if booked today)</div>';
+  if(adhoc.length){ h+='<div class="firegrid">'+adhoc.map(fireChildBlock).join('')+'</div>'; }
+  h+='<div class="fireblank">Other: ____________________________  In? &#9744;  Contact ____________________________</div>'+
+     '<div class="fireblank">Other: ____________________________  In? &#9744;  Contact ____________________________</div></div>';
+  h+='<div class="firestaffsec"><div class="fireadhochead">Staff on this day, next of kin and medical</div>';
+  if(staff.length){ h+='<div class="firegrid">'+staff.map(fireStaffBlock).join('')+'</div>'; }
+  else h+='<div class="firenone">No staff hours set for a '+esc(day)+'. Set working days on each staff record.</div>';
+  h+='</div>';
+  h+='<div class="firefoot"><span>Little Puddings, Lincoln LN6 0UL</span><span>Confidential, contains personal data &#183; '+esc(fmtDate(todayISO()))+'</span></div>';
+  h+='</div>'; return h;
+}
+function buildFireBagDocHTML(){
+  var days=['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  return '<div class="firebag">'+days.map(function(d,i){ return fireDayPage(d,i===0); }).join('')+'</div>';
+}
+
 /* ---------- generate document ---------- */
 let currentDoc='emergency';
 let currentChildId=null;
@@ -948,6 +1236,7 @@ function renderDoc(){ document.getElementById('document').innerHTML =
   currentDoc==='trip' ? buildTripDocHTML() :
   currentDoc==='holiday' ? buildHolidayDocHTML() :
   currentDoc==='checklist' ? buildChecklistDocHTML() :
+  currentDoc==='firebag' ? buildFireBagDocHTML() :
   currentDoc==='record' ? buildRecordDocHTML() : buildDocHTML(); }
 
 function allergyChildren(){
@@ -1450,6 +1739,10 @@ function updatePreviewBar(){
   var back=document.getElementById('previewBackBtn');
   if(ctrls) ctrls.style.display = emergencyOnly ? 'none' : 'flex';
   if(back) back.textContent = emergencyOnly ? '\u2039 Lock' : '\u2039 Back to data';
+  var wb=document.getElementById('wordBtn'), rw=document.getElementById('reviewedWrap');
+  var isFire = currentDoc==='firebag';
+  if(wb) wb.style.display = isFire ? 'none' : '';
+  if(rw) rw.style.display = isFire ? 'none' : 'flex';
 }
 function openPins(){ ensureModel(); var m=document.getElementById('formMount');
   m.innerHTML='<div class="formcard"><h2>PINs</h2>'+
@@ -1550,10 +1843,10 @@ function buildChecklistWordHTML(){
 /* ================= PARENT & STAFF FORM LINKS ================= */
 function b64enc(obj){ return btoa(unescape(encodeURIComponent(JSON.stringify(obj)))); }
 function b64dec(str){ return JSON.parse(decodeURIComponent(escape(atob(str)))); }
-var PARENT_FIELDS=['first','surname','preferred','dob','sex','address','homephone','c1label','c1name','c1mobile','c1email','c1work','c1workphone','c2label','c2name','c2mobile','c2email','c2work','c2workphone','doctorname','doctorphone','ec1name','ec1phone','ec2name','ec2phone','school','schoolphone','allergies','dietary','alert'];
-var STAFF_FIELDS=['name','nok','nokrel','nokphone','emergency','medication','childrenNote'];
-var PLABELS={first:'First name',surname:'Surname',preferred:'Known as',dob:'Date of birth',sex:'Sex',address:'Home address',homephone:'Home phone',c1label:'Carer 1 relationship',c1name:'Carer 1 name',c1mobile:'Carer 1 mobile',c1email:'Carer 1 email',c1work:'Carer 1 workplace',c1workphone:'Carer 1 work phone',c2label:'Carer 2 relationship',c2name:'Carer 2 name',c2mobile:'Carer 2 mobile',c2email:'Carer 2 email',c2work:'Carer 2 workplace',c2workphone:'Carer 2 work phone',doctorname:'Doctor name',doctorphone:'Doctor phone',ec1name:'Emergency contact 1 name',ec1phone:'Emergency contact 1 phone',ec2name:'Emergency contact 2 name',ec2phone:'Emergency contact 2 phone',school:'School',schoolphone:'School phone',allergies:'Allergies',dietary:'Dietary',alert:'Medical needs'};
-var SLABELS={name:'Name',nok:'Next of kin name',nokrel:'Next of kin relationship',nokphone:'Next of kin phone',emergency:'Emergency contacts',medication:'Medication',childrenNote:'Own children'};
+var PARENT_FIELDS=['first','surname','preferred','dob','sex','address','homephone','c1label','c1name','c1mobile','c1email','c1work','c1workphone','c2label','c2name','c2mobile','c2email','c2work','c2workphone','doctorname','doctorphone','ec1name','ec1phone','ec2name','ec2phone','school','schoolphone','allergies','dietary','medication','alert'];
+var STAFF_FIELDS=['name','nok','nokrel','nokphone','emergency','allergies','medication','childrenNote'];
+var PLABELS={first:'First name',surname:'Surname',preferred:'Known as',dob:'Date of birth',sex:'Sex',address:'Home address',homephone:'Home phone',c1label:'Carer 1 relationship',c1name:'Carer 1 name',c1mobile:'Carer 1 mobile',c1email:'Carer 1 email',c1work:'Carer 1 workplace',c1workphone:'Carer 1 work phone',c2label:'Carer 2 relationship',c2name:'Carer 2 name',c2mobile:'Carer 2 mobile',c2email:'Carer 2 email',c2work:'Carer 2 workplace',c2workphone:'Carer 2 work phone',doctorname:'Doctor name',doctorphone:'Doctor phone',ec1name:'Emergency contact 1 name',ec1phone:'Emergency contact 1 phone',ec2name:'Emergency contact 2 name',ec2phone:'Emergency contact 2 phone',school:'School',schoolphone:'School phone',allergies:'Allergies',dietary:'Dietary',medication:'Regular medication',alert:'Medical needs'};
+var SLABELS={name:'Name',nok:'Next of kin name',nokrel:'Next of kin relationship',nokphone:'Next of kin phone',emergency:'Emergency contacts',allergies:'Allergies',medication:'Medication',childrenNote:'Own children'};
 function formBase(kind){ var s=data.settings||{}; return kind==='staff' ? (s.staffFormUrl||'https://littlepuddingssingin.github.io/staff-form/') : (s.parentFormUrl||'https://littlepuddingssingin.github.io/parent-form/'); }
 function openParentLink(id){ ensureModel(); var c=data.children.find(function(x){return x.id===id;}); if(!c)return;
   var payload={id:c.id}; PARENT_FIELDS.forEach(function(f){ payload[f]=c[f]||''; });
