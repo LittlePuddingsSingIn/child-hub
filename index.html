@@ -246,6 +246,7 @@
       <button class="primary" onclick="generate('allergy')">Generate allergy sheet</button>
       <button class="primary" onclick="generate('record')">Generate record forms</button>
       <button class="primary" onclick="generate('firebag')">Fire bag sheet</button>
+      <button class="primary" onclick="generate('schedule')">Weekly schedule</button>
       <button class="primary" onclick="openTripPlanner()">Trip register</button>
       <button class="ghost" onclick="openAvailability()">Availability</button>
       <button class="ghost" onclick="openFunding()">Funding</button>
@@ -297,7 +298,7 @@
 
 <script>
 /* ---------- build stamp (bump this whenever you upload a new version) ---------- */
-var BUILD='2026-11-05b';
+var BUILD='2026-11-05c';
 /* ---------- band configuration (edit colours here if you like) ---------- */
 const BANDS = [
   { name:'Under 1s', color:'#C0392B' },
@@ -438,7 +439,7 @@ function renderLandingInto(){
       '<button class="ghost" onclick="openForm(\'child\')">+ Add child</button>'+
       '<button class="ghost" onclick="openForm(\'staff\')">+ Add staff</button>'+
     '</div>'+
-    (overdue?('<div style="background:#FBF3DC;border-left:4px solid #D4A017;border-radius:6px;padding:10px 14px;margin-top:12px;font-size:14px"><b>'+overdue+'</b> child'+(overdue===1?'’s details need'+'':'ren’s details need')+' confirming with parents (over six months). Open <b>Reviews</b> to see who.</div>'):'')+
+    (overdue?('<div style="background:#F4DEDA;border-left:4px solid #A13A2A;border-radius:8px;padding:12px 16px;margin-top:14px;font-size:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span style="flex:1;min-width:240px;color:#A13A2A"><b>Reminder:</b> '+overdue+' child'+(overdue===1?'’s details need':'ren’s details need')+' confirming with parents (not reviewed in over six months).</span><button class="primary" onclick="openReviews()">Review now</button></div>'):'')+
     '</div>'+
     '<div class="syncbanner"><div class="sbtxt"><b>Working across your laptops?</b> Load your latest data file from OneDrive before you start, then Save it back when you finish, so both machines stay in step.</div>'+
       '<div class="sbbtns"><button class="primary" onclick="openOneDrive()">OneDrive</button></div></div>';
@@ -877,7 +878,7 @@ function openPermissions(){ var m=document.getElementById('formMount');
     '<div class="formactions" style="margin-top:14px"><button class="ghost" onclick="closeForm()">Close</button></div></div>';
   m.scrollIntoView({behavior:'smooth',block:'start'});
 }
-var AV={tab:'now', date:null, adults:4, staff:4, schoolAdults:2};
+var AV={tab:'now', date:null, adults:4, staff:4, schoolMax:9};
 var HOL={childId:null, view:'enter'};
 function openAvailability(){ if(!AV.date) AV.date=todayISO(); renderAvail(); }
 function avTabBtn(name,label){ return '<button class="'+(AV.tab===name?'primary':'ghost')+'" onclick="AV.tab=\''+name+'\';renderAvail()">'+label+'</button>'; }
@@ -893,9 +894,10 @@ function renderAvail(){
 }
 function avCellClass(val,limit){ return val>limit?'avover':(val===limit&&val>0?'avfull':'avok'); }
 function avNow(){
-  var adults=AV.adults, asOf=AV.date, schoolAdults=Math.min(AV.schoolAdults||2, adults);
+  var adults=AV.adults, asOf=AV.date;
+  var legalSchool=6*adults; var schoolMax=(AV.schoolMax!=null?AV.schoolMax:9);
   var d=availabilityData(asOf), days=d.days, res=d.res;
-  var lim1=adults, lim5=3*adults, lim8=6*adults, limSchool=6*schoolAdults;
+  var lim1=adults, lim5=3*adults, lim8=6*adults, limSchool=schoolMax;
   function cell(v,l){ return '<td class="'+avCellClass(v,l)+'">'+v+'</td>'; }
   function plain(v){ return '<td>'+v+'</td>'; }
   // children to stand down to be within every limit, per day
@@ -913,10 +915,10 @@ function avNow(){
     '<div style="display:flex;gap:16px;flex-wrap:wrap">'+
       '<div class="field" style="max-width:180px"><label for="av_date">Date to check</label><input id="av_date" type="date" value="'+esc(asOf)+'" onchange="AV.date=this.value;renderAvail()"></div>'+
       '<div class="field" style="max-width:150px"><label for="av_adults">Adults in ratio</label><input id="av_adults" type="number" min="1" max="6" value="'+adults+'" onchange="AV.adults=parseInt(this.value)||1;renderAvail()"></div>'+
-      '<div class="field" style="max-width:220px"><label for="av_sch">Practitioners for school-age (5 to 8)</label><input id="av_sch" type="number" min="1" max="'+adults+'" value="'+schoolAdults+'" onchange="AV.schoolAdults=parseInt(this.value)||1;renderAvail()"><span class="agehint">Caps school-age places, keeping the rest for under 5s (sibling continuity).</span></div>'+
+      '<div class="field" style="max-width:220px"><label for="av_sch">Max school-age (5 to 8) children</label><input id="av_sch" type="number" min="0" max="'+legalSchool+'" value="'+schoolMax+'" onchange="AV.schoolMax=parseInt(this.value);if(isNaN(AV.schoolMax))AV.schoolMax=9;renderAvail()"><span class="agehint">Your choice. The legal maximum is '+legalSchool+' ('+adults+' \u00d7 6); set it lower to keep places for under 5s.</span></div>'+
     '</div>'+
     '<table class="htable" style="margin-top:10px"><tr><th>Age group</th>'+days.map(x=>'<th>'+x.slice(0,3)+'</th>').join('')+'<th>Limit</th></tr>'+rows+'</table>'+
-    '<p style="color:var(--grey);font-size:12px;margin-top:8px">Limits are '+adults+' adult(s) \u00d7 6 under 8, 3 under 5, 1 under 1. School-age children count toward under 8 but not the under-5 limit, and are capped at '+schoolAdults+' practitioner(s) worth ('+limSchool+'). Over 8s have no ratio limit but must not affect the care of the under 8s and under 5s. A rising 5 counts as school age from the September after their 4th birthday; a child leaves ratio on their 8th birthday.</p>';
+    '<p style="color:var(--grey);font-size:12px;margin-top:8px">Limits are '+adults+' adult(s) \u00d7 6 under 8, 3 under 5, 1 under 1. School-age children count toward under 8 but not the under-5 limit. The legal school-age maximum is '+legalSchool+'; you have set your own cap of '+limSchool+' to keep places for under 5s. Over 8s have no ratio limit but must not affect the care of the under 8s and under 5s. A rising 5 counts as school age from the September after their 4th birthday; a child leaves ratio on their 8th birthday.</p>';
 }
 function avForecast(){
   var adults=AV.adults, lim5=3*adults, lim8=6*adults;
@@ -1274,6 +1276,60 @@ function buildFireBagDocHTML(){
   return '<div class="firebag">'+days.map(function(d,i){ return fireDayPage(d,i===0); }).join('')+'</div>';
 }
 
+/* ---------- weekly schedule of all children ---------- */
+function dayTimes(c,day){ var a=(c.attendance||[]).find(function(x){return x.day===day;}); if(!a) return '';
+  var t1=block1(a), t2=block2(a); return [t1, t2].filter(Boolean).join(' & '); }
+function scheduleGroups(){ return [['ayr','All year round'],['term','Term time only'],['holidays','Holidays only'],['','Basis not set']]; }
+function buildScheduleDocHTML(){
+  var rev=document.getElementById('reviewedInput').value;
+  var wkdays=['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  var h='<div class="brand">Little Puddings</div>'+
+    '<h1 class="title">Weekly schedule</h1>'+
+    '<div class="docsub">Who is booked in each day, with times</div>'+
+    '<p class="reviewed">'+esc(fmtDate(rev||todayISO()))+' &nbsp;·&nbsp; Confidential</p>';
+  var kids=(data.children||[]).filter(function(c){return onRoll(c);});
+  if(!kids.length){ h+='<p class="anone">No children to show.</p>'; }
+  else {
+    scheduleGroups().forEach(function(g){ var rows=kids.filter(function(c){return (c.basis||'')===g[0];}).sort(function(a,b){return fullName(a).localeCompare(fullName(b));}); if(!rows.length) return;
+      h+='<div class="bandhead" style="background:#1A7A4A">'+g[1]+' ('+rows.length+')</div>'+
+        '<table class="htable"><thead><tr><th style="width:150px">Child</th><th>Age</th>'+wkdays.map(function(d){return '<th>'+d.slice(0,3)+'</th>';}).join('')+'</tr></thead><tbody>'+
+        rows.map(function(c){ return '<tr><td><b>'+esc(fullName(c))+'</b></td><td>'+esc(ageShort(c))+'</td>'+
+          wkdays.map(function(d){ var t=dayTimes(c,d); return '<td'+(t?'':' style="background:#f6f5f2"')+'>'+(t||'')+'</td>'; }).join('')+'</tr>'; }).join('')+
+        '</tbody></table>';
+    });
+    // staff schedule
+    if((data.staff||[]).length){
+      h+='<div class="bandhead" style="background:#6B6460">Staff</div>'+
+        '<table class="htable"><thead><tr><th style="width:150px">Staff</th><th>In ratio</th>'+wkdays.map(function(d){return '<th>'+d.slice(0,3)+'</th>';}).join('')+'</tr></thead><tbody>'+
+        (data.staff||[]).map(function(s){ return '<tr><td><b>'+esc(s.name||'')+'</b></td><td>'+(s.inRatio===false?'no':'yes')+'</td>'+
+          wkdays.map(function(d){ var a=(s.hours||[]).find(function(x){return x.day===d;}); var t=a?[block1(a),block2(a)].filter(Boolean).join(' & '):''; return '<td'+(t?'':' style="background:#f6f5f2"')+'>'+(t||'')+'</td>'; }).join('')+'</tr>'; }).join('')+
+        '</tbody></table>';
+    }
+  }
+  h+='<div class="docfoot"><span>Little Puddings, Lincoln LN6 0UL</span><span>Confidential, contains personal data · v'+esc(BUILD)+'</span></div>';
+  return h;
+}
+function buildScheduleWordHTML(){
+  var rev=document.getElementById('reviewedInput').value;
+  var wkdays=['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  var th='font-family:Arial;font-size:9pt;font-weight:bold;color:#1A7A4A;background:#E8F1EC;border:1pt solid #cccccc;padding:4px 6px;text-align:left';
+  var td='font-family:Arial;font-size:9.5pt;border:1pt solid #cccccc;padding:4px 6px';
+  var h='<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:11pt">Little Puddings</div>'+
+    '<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:22pt;margin:2px 0">Weekly schedule</div>'+
+    '<div style="font-family:Georgia,serif;font-style:italic;color:#6B6460;font-size:11pt;border-bottom:2pt solid #D4A017;padding-bottom:6px">Who is booked in each day, with times</div>'+
+    '<div style="font-family:Arial;font-size:9pt;color:#6B6460;margin:6px 0 12px">'+esc(fmtDate(rev||todayISO()))+' &#183; Confidential</div>';
+  var kids=(data.children||[]).filter(function(c){return onRoll(c);});
+  function bandRow(label,color){ return '<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:12px 0 6px"><tr><td bgcolor="'+color+'" style="background:'+color+';font-family:Georgia,serif;font-size:12pt;font-weight:bold;color:#fff;padding:4px 10px">'+esc(label)+'</td></tr></table>'; }
+  scheduleGroups().forEach(function(g){ var rows=kids.filter(function(c){return (c.basis||'')===g[0];}).sort(function(a,b){return fullName(a).localeCompare(fullName(b));}); if(!rows.length) return;
+    h+=bandRow(g[1]+' ('+rows.length+')','#1A7A4A')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse"><tr><td style="'+th+'">Child</td><td style="'+th+'">Age</td>'+wkdays.map(function(d){return '<td style="'+th+'">'+d.slice(0,3)+'</td>';}).join('')+'</tr>'+
+      rows.map(function(c){ return '<tr><td style="'+td+';font-weight:bold">'+esc(fullName(c))+'</td><td style="'+td+'">'+esc(ageShort(c))+'</td>'+wkdays.map(function(d){return '<td style="'+td+'">'+esc(dayTimes(c,d))+'</td>';}).join('')+'</tr>'; }).join('')+'</table>';
+  });
+  if((data.staff||[]).length){ h+=bandRow('Staff','#6B6460')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse"><tr><td style="'+th+'">Staff</td><td style="'+th+'">In ratio</td>'+wkdays.map(function(d){return '<td style="'+th+'">'+d.slice(0,3)+'</td>';}).join('')+'</tr>'+
+    (data.staff||[]).map(function(s){ return '<tr><td style="'+td+';font-weight:bold">'+esc(s.name||'')+'</td><td style="'+td+'">'+(s.inRatio===false?'no':'yes')+'</td>'+wkdays.map(function(d){ var a=(s.hours||[]).find(function(x){return x.day===d;}); return '<td style="'+td+'">'+esc(a?[block1(a),block2(a)].filter(Boolean).join(' & '):'')+'</td>'; }).join('')+'</tr>'; }).join('')+'</table>'; }
+  h+='<div style="font-family:Arial;font-size:8.5pt;color:#6B6460;border-top:1pt solid #cccccc;margin-top:14px;padding-top:6px">Little Puddings, Lincoln LN6 0UL &#160;&#183;&#160; Confidential, contains personal data</div>';
+  return h;
+}
+
 /* ---------- generate document ---------- */
 let currentDoc='emergency';
 let currentChildId=null;
@@ -1350,6 +1406,7 @@ function renderDoc(){ document.getElementById('document').innerHTML =
   currentDoc==='holiday' ? buildHolidayDocHTML() :
   currentDoc==='checklist' ? buildChecklistDocHTML() :
   currentDoc==='firebag' ? buildFireBagDocHTML() :
+  currentDoc==='schedule' ? buildScheduleDocHTML() :
   currentDoc==='record' ? buildRecordDocHTML() : buildDocHTML(); }
 
 function allergyChildren(){
@@ -1564,6 +1621,7 @@ function downloadWord(){
   if(currentDoc==='allergy'){ inner=buildAllergyWordHTML(); title='Allergies and Dietary Requirements'; }
   else if(currentDoc==='trip'){ inner=buildTripWordHTML(); title='Trip Outing Register'; }
   else if(currentDoc==='checklist'){ inner=buildChecklistWordHTML(); title=(data.checklist.title.trim()||'Children checklist'); }
+  else if(currentDoc==='schedule'){ inner=buildScheduleWordHTML(); title='Weekly schedule'; }
   else if(currentDoc==='record'){ inner=buildRecordWordHTML();
     const c=currentChildId?data.children.find(x=>x.id===currentChildId):null;
     title = c ? ('Child Record Form, '+fullName(c)) : 'Child Record Forms'; }
@@ -1877,7 +1935,7 @@ function updatePreviewBar(){
   var wb=document.getElementById('wordBtn'), rw=document.getElementById('reviewedWrap');
   var isFire = currentDoc==='firebag';
   if(wb) wb.style.display = isFire ? 'none' : '';
-  if(rw) rw.style.display = isFire ? 'none' : 'flex';
+  if(rw) rw.style.display = (isFire||currentDoc==='schedule') ? 'none' : 'flex';
 }
 function openPins(){ ensureModel(); var m=document.getElementById('formMount');
   m.innerHTML='<div class="formcard"><h2>PINs</h2>'+
