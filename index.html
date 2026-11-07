@@ -331,7 +331,7 @@
 
 <script>
 /* ---------- build stamp (bump this whenever you upload a new version) ---------- */
-var BUILD='2026-11-07d';
+var BUILD='2026-11-07f';
 /* ---------- band configuration (edit colours here if you like) ---------- */
 const BANDS = [
   { name:'Under 1s', color:'#C0392B' },
@@ -472,6 +472,7 @@ function renderLandingInto(){
   var m=mnt(); var nc=(data.children||[]).length, ns=(data.staff||[]).length;
   var overdue=(data.children||[]).filter(function(c){return onRoll(c)&&reviewOverdue(c);}).length;
   var gaps=(data.children||[]).filter(function(c){return childMissing(c).length;}).length;
+  var raDue=(data.children||[]).filter(function(c){return onRoll(c)&&riskReviewDue(c);}).length;
   m.innerHTML='<div class="formcard" style="margin-bottom:22px"><h2>Welcome</h2>'+
     '<p style="color:var(--grey);font-size:14px;margin-top:0">This is your central record for Little Puddings. Pick <b>Children</b> or <b>Staff</b> to see your lists, or any button along the top for availability, documents and the rest.</p>'+
     '<div style="display:flex;gap:12px;flex-wrap:wrap;margin:10px 0 4px">'+
@@ -482,6 +483,7 @@ function renderLandingInto(){
     '</div>'+
     (gaps?('<div style="background:#FBF3DC;border-left:4px solid #D4A017;border-radius:8px;padding:12px 16px;margin-top:14px;font-size:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span style="flex:1;min-width:240px;color:#8a6d00"><b>To do:</b> '+gaps+' child'+(gaps===1?' still needs':'ren still need')+' some details filling in.</span><button class="primary" onclick="openMissing()">See what’s missing</button></div>'):'')+
     (overdue?('<div style="background:#F4DEDA;border-left:4px solid #A13A2A;border-radius:8px;padding:12px 16px;margin-top:14px;font-size:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span style="flex:1;min-width:240px;color:#A13A2A"><b>Reminder:</b> '+overdue+' child'+(overdue===1?'’s details need':'ren’s details need')+' confirming with parents (not reviewed in over six months).</span><button class="primary" onclick="openReviews()">Review now</button></div>'):'')+
+    (raDue?('<div style="background:#FBF3DC;border-left:4px solid #D4A017;border-radius:8px;padding:12px 16px;margin-top:14px;font-size:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span style="flex:1;min-width:240px;color:#8a6d00"><b>Risk assessments:</b> '+raDue+(raDue===1?' child’s assessment is':' children’s assessments are')+' due a review (as they grow, their risks change).</span><button class="primary" onclick="openRiskDue()">Review now</button></div>'):'')+
     '</div>'+
     '<div class="syncbanner"><div class="sbtxt"><b>Working across your laptops?</b> Load your latest data file from OneDrive before you start, then Save it back when you finish, so both machines stay in step.</div>'+
       '<div class="sbbtns"><button class="primary" onclick="openOneDrive()">OneDrive</button></div></div>';
@@ -508,7 +510,7 @@ function renderChildrenInto(){
   if(!ch.length){ body='<div class="empty">No children yet. Use “Add child” to start your list. You can add just names first, then fill the rest in later.</div>'; }
   else{
     var rowFor=function(c){ var b=bandOf(c); var miss=childMissing(c);
-      return '<tr><td><b>'+esc(fullName(c))+'</b>'+(hasAllergyInfo(c)?' <span title="allergy or dietary noted" style="color:var(--burg)">⚠</span>':'')+(reviewOverdue(c)?' <span title="parent review overdue" style="color:var(--burg)">◷</span>':'')+
+      return '<tr><td><b>'+esc(fullName(c))+'</b>'+(hasAllergyInfo(c)?' <span title="allergy or dietary noted" style="color:var(--burg)">⚠</span>':'')+(reviewOverdue(c)?' <span title="parent review overdue" style="color:var(--burg)">◷</span>':'')+(riskReviewDue(c)?' <span title="risk assessment due for review" style="color:#D4A017">⚑</span>':'')+
         (miss.length?' <span title="'+esc(miss.join(', '))+'" style="display:inline-block;background:#FBF3DC;color:#8a6d00;border:1px solid #E6D08a;border-radius:20px;padding:0 8px;font-size:11px;font-weight:700">needs '+miss.length+'</span>':'')+'</td>'+
         '<td><span class="bandpill" style="background:'+bandColor(b)+'">'+b+'</span></td>'+
         '<td style="font-size:12px;color:var(--grey)">'+esc(BASIS_LABEL[c.basis]||'–')+'</td>'+
@@ -564,7 +566,7 @@ function openForm(type, person){
     m.innerHTML = staffForm(person, editing);
   }
   window.scrollTo(0,0);
-  var firstField=document.getElementById(type==='child'?'f_first':'f_name');
+  var firstField=document.getElementById('f_first');
   if(firstField){ try{ firstField.focus({preventScroll:true}); }catch(e){ firstField.focus(); } }
 }
 function updateAgeHint(){
@@ -679,10 +681,12 @@ function staffForm(s,editing){
      '<button class="ghost" onclick="closeForm()">Cancel</button></div>'+
    '<input type="hidden" id="f_id" value="'+esc(s.id||'')+'">'+
    '<div class="grid">'+
-     fld('f_name','Name',s.name)+
+     fld('f_first','First name',s.first||s.name)+
+     fld('f_middle','Middle name(s) (optional)',s.middle)+
+     fld('f_surname','Surname',s.surname)+
+     fld('f_preferred','Known as (optional)',s.preferred)+
      fld('f_role','Role',s.role,'text','e.g. Childminder, Apprentice')+
      '<div class="field"><label for="f_sdob">Date of birth</label><input id="f_sdob" type="date" value="'+esc(s.dob||'')+'"><span class="agehint">For identification in an emergency.</span></div>'+
-     '<div class="field"></div>'+
      '<div class="field full"><label style="display:flex;align-items:center;gap:8px;text-transform:none;font-weight:400;color:var(--ink)"><input type="checkbox" id="f_inratio" '+(s.inRatio!==false?'checked':'')+'> Counts in ratio (untick an apprentice until their suitability is approved by Ofsted)</label></div>'+
      '<div class="subhead">Next of kin</div>'+
      fld('f_nok','Name',s.nok)+
@@ -730,7 +734,9 @@ function saveChild(){
 }
 function saveStaff(){
   const rec={ id:v('f_id')||uid(), type:'staff',
-    name:v('f_name'), role:v('f_role'), dob:v('f_sdob'), inRatio:(document.getElementById('f_inratio')||{}).checked!==false, nok:v('f_nok'), nokrel:v('f_nokrel'), nokphone:v('f_nokphone'),
+    first:v('f_first'), middle:v('f_middle'), surname:v('f_surname'), preferred:v('f_preferred'),
+    name:([v('f_first'),v('f_middle'),v('f_surname')].filter(Boolean).join(' '))||v('f_first')||v('f_surname'),
+    role:v('f_role'), dob:v('f_sdob'), inRatio:(document.getElementById('f_inratio')||{}).checked!==false, nok:v('f_nok'), nokrel:v('f_nokrel'), nokphone:v('f_nokphone'),
     hours: DAYS.filter(d=>{const e=document.getElementById('f_on_'+d.slice(0,3));return e&&e.checked;})
         .map(d=>{const ab=d.slice(0,3);return {day:d, from:v('f_from_'+ab), to:v('f_to_'+ab), from2:v('f_from2_'+ab), to2:v('f_to2_'+ab)};}),
     allergies:v('f_allergies'), medication:v('f_medication'), emergency:v('f_emergency'), childrenNote:v('f_children') };
@@ -784,6 +790,12 @@ const RISK_SECTIONS = [
 ];
 function riskQ(key){ for(var i=0;i<RISK_SECTIONS.length;i++){ var q=RISK_SECTIONS[i].qs.find(function(x){return x.key===key;}); if(q) return q; } return null; }
 function riskAns(c,key){ return (c.risk&&c.risk.answers&&c.risk.answers[key])||{}; }
+// risk assessment review cycle: quarterly while under 2, six-monthly from 2
+function riskHasAssessment(c){ return !!(c&&c.risk&&c.risk.date); }
+function riskCycleMonths(c){ var a=ageYears(c&&c.dob?c.dob:null); return (a!=null && a<2)?3:6; }
+function riskLastReview(c){ var rk=c&&c.risk; if(!rk||!rk.date) return null; var dates=[rk.date]; (rk.reviews||[]).forEach(function(rv){ if(rv.date) dates.push(rv.date); }); dates=dates.filter(Boolean).sort(); return dates.length?dates[dates.length-1]:null; }
+function riskDueDate(c){ var last=riskLastReview(c); return last?addMonthsISO(last,riskCycleMonths(c)):null; }
+function riskReviewDue(c){ if(!riskHasAssessment(c)) return false; var due=riskDueDate(c); return !!due && (new Date() > new Date(due+'T23:59:59')); }
 // flagged risk items for a child: {label, detail} for anything meeting its flag condition or any text answer
 function riskFlags(c){ var out=[];
   RISK_SECTIONS.forEach(function(sec){ sec.qs.forEach(function(q){ var a=riskAns(c,q.key);
@@ -1022,6 +1034,24 @@ function openPermissions(){ var m=document.getElementById('formMount');
     '<div class="formactions" style="margin-top:14px"><button class="ghost" onclick="closeForm()">Close</button></div></div>';
   m.scrollIntoView({behavior:'smooth',block:'start'});
 }
+/* ---------- risk assessments due for review ---------- */
+function openRiskDue(){ var m=mnt();
+  var kids=(data.children||[]).filter(function(c){return onRoll(c);});
+  var due=kids.filter(riskReviewDue).sort(function(a,b){ return (riskDueDate(a)||'').localeCompare(riskDueDate(b)||''); });
+  var noAssess=kids.filter(function(c){return !riskHasAssessment(c);});
+  var body;
+  if(!due.length){ body='<div style="background:#E8F1EC;border-left:4px solid #1A7A4A;border-radius:8px;padding:12px 16px;font-size:14px">No risk assessments are due for review right now.</div>'; }
+  else { body=due.map(function(c){ var cyc=riskCycleMonths(c);
+      return '<div style="border:1px solid var(--line);border-left:4px solid #D4A017;border-radius:8px;padding:10px 14px;margin:8px 0"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
+        '<b>'+esc(fullName(c))+'</b> <span style="color:var(--grey);font-size:12px">last reviewed '+esc(fmtDate(riskLastReview(c)))+' · '+cyc+'-month cycle · was due '+esc(fmtDate(riskDueDate(c)))+'</span>'+
+        '<span class="spacer" style="flex:1"></span><button class="primary" onclick="openRiskForm(\''+c.id+'\')">Open assessment</button></div></div>'; }).join(''); }
+  m.innerHTML='<div class="formcard"><h2>Risk assessment reviews</h2>'+
+    '<p style="color:var(--grey);font-size:13px;margin-top:0">A child’s assessment is flagged for review every three months while under two, then every six months. The cycle counts from the latest review (or the first assessment date). Open it, check each section still fits the child, then press <b>Add review</b> to log the date and any changes.</p>'+
+    body+
+    (noAssess.length?('<div class="subhead" style="margin-top:16px">No assessment started yet ('+noAssess.length+')</div><div style="font-size:13px;color:var(--grey)">'+noAssess.map(function(c){ return '<button class="ghost" style="margin:3px 6px 0 0" onclick="openRiskForm(\''+c.id+'\')">'+esc(fullName(c))+'</button>'; }).join('')+'</div>'):'')+
+    '<div class="formactions" style="margin-top:14px"><button class="ghost" onclick="openRiskReports()">Risk reports by aspect</button><button class="ghost" onclick="showLanding()">Back to home</button></div></div>';
+  m.scrollIntoView({behavior:'smooth',block:'start'});
+}
 /* ---------- risk reports by aspect ---------- */
 var RISKVIEW={key:'reins'};
 function openRiskReports(){ var m=document.getElementById('formMount');
@@ -1057,7 +1087,8 @@ function openRiskForm(cid){ var c=(data.children||[]).find(function(x){return x.
   c.risk=c.risk||{}; var rk=c.risk; var A=rk.answers||{};
   var m=document.getElementById('formMount');
   var h='<div class="formcard"><h2>Risk assessment: '+esc(fullName(c))+'</h2>'+
-    '<p style="color:var(--grey);font-size:13px;margin-top:0">Review at registration, at the 6-week check-in, at least annually, and whenever the child’s needs change. Saved on the child’s record; print or report from the buttons at the foot.</p>'+
+    '<p style="color:var(--grey);font-size:13px;margin-top:0">Review at registration, at the 6-week check-in, and on a '+riskCycleMonths(c)+'-month cycle (quarterly while under two, six-monthly after), plus whenever the child’s needs change. Saved on the child’s record; print or report from the buttons at the foot.</p>'+
+    (riskHasAssessment(c)?('<div style="background:'+(riskReviewDue(c)?'#FBF3DC':'#E8F1EC')+';border-left:4px solid '+(riskReviewDue(c)?'#D4A017':'#1A7A4A')+';border-radius:8px;padding:10px 14px;margin:0 0 14px;font-size:13px;color:'+(riskReviewDue(c)?'#8a6d00':'var(--ink)')+'">'+(riskReviewDue(c)?'<b>Due for review.</b> ':'<b>Up to date.</b> ')+'Last reviewed '+esc(fmtDate(riskLastReview(c)))+', next due '+esc(fmtDate(riskDueDate(c)))+' ('+riskCycleMonths(c)+'-month cycle). Use <b>Add review</b> below to log a check.</div>'):'')+
     '<div class="grid"><div class="field"><label for="rk_date">Date of assessment</label><input id="rk_date" type="date" value="'+esc(rk.date||todayISO())+'"></div>'+
       '<div class="field"><label for="rk_by">Assessed by</label><input id="rk_by" value="'+esc(rk.by||'')+'" placeholder="Name"></div></div>';
   RISK_SECTIONS.forEach(function(sec){
