@@ -78,6 +78,10 @@
   textarea{resize:vertical;min-height:46px}
   .subhead{grid-column:1/-1;font-family:Georgia,serif;color:var(--green);font-size:15px;margin:6px 0 -2px;border-top:1px dashed var(--line);padding-top:12px}
   .formactions{display:flex;gap:10px;margin-top:18px}
+  .formactions.topsave{margin-top:4px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+  .floatsave{position:fixed;right:22px;bottom:22px;z-index:40;display:flex;gap:8px}
+  .floatsave button{box-shadow:0 4px 16px rgba(0,0,0,.20)}
+  @media print{ .floatsave{display:none} }
   .agehint{font-size:12px;color:var(--grey);font-style:italic}
   .days{grid-column:1/-1;border:1px solid var(--line);border-radius:8px;padding:6px 12px;background:#fff}
   .dayrow{display:grid;grid-template-columns:1fr 92px 92px 92px 92px;gap:10px;align-items:center;padding:4px 0;border-bottom:1px dashed var(--line)}
@@ -327,7 +331,7 @@
 
 <script>
 /* ---------- build stamp (bump this whenever you upload a new version) ---------- */
-var BUILD='2026-11-07c';
+var BUILD='2026-11-07d';
 /* ---------- band configuration (edit colours here if you like) ---------- */
 const BANDS = [
   { name:'Under 1s', color:'#C0392B' },
@@ -545,7 +549,7 @@ function renderStaffInto(){
       '<button class="danger" onclick="del(\''+s.id+'\',\'staff\')">Delete</button></div></td></tr>'; }).join('')+'</tbody></table>';
   m.innerHTML='<div class="formcard">'+head+'<div style="margin-top:12px">'+body+'</div></div>'; window.scrollTo(0,0);
 }
-function fullName(c){ return [c.first,c.surname].filter(Boolean).join(' ') || c.first || c.surname || '(unnamed)'; }
+function fullName(c){ return [c.first,c.middle,c.surname].filter(Boolean).join(' ') || c.first || c.surname || '(unnamed)'; }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
 
 /* ---------- entry form ---------- */
@@ -559,7 +563,9 @@ function openForm(type, person){
   } else {
     m.innerHTML = staffForm(person, editing);
   }
-  m.scrollIntoView({behavior:'smooth',block:'start'});
+  window.scrollTo(0,0);
+  var firstField=document.getElementById(type==='child'?'f_first':'f_name');
+  if(firstField){ try{ firstField.focus({preventScroll:true}); }catch(e){ firstField.focus(); } }
 }
 function updateAgeHint(){
   const dob=document.getElementById('f_dob').value;
@@ -572,9 +578,12 @@ function fld(id,label,val,type='text',ph=''){
 }
 function childForm(c,editing){
   return '<div class="formcard"><h2>'+(editing?'Edit child':'Add child')+'</h2>'+
+   '<div class="formactions topsave"><button class="primary" onclick="saveChild()">'+(editing?'Save changes':'Add child')+'</button>'+
+     '<button class="ghost" onclick="closeForm()">Cancel</button></div>'+
    '<input type="hidden" id="f_id" value="'+esc(c.id||'')+'">'+
    '<div class="grid">'+
      fld('f_first','First name',c.first)+
+     fld('f_middle','Middle name(s) (optional)',c.middle)+
      fld('f_surname','Surname',c.surname)+
      fld('f_preferred','Known as (optional)',c.preferred)+
      '<div class="field"><label for="f_dob">Date of birth</label><input id="f_dob" type="date" value="'+esc(c.dob||'')+'"><span class="agehint" id="ageHint"></span></div>'+
@@ -661,10 +670,13 @@ function childForm(c,editing){
          '</div>'; }).join('')+'</div></div>'+
    '</div>'+
    '<div class="formactions"><button class="primary" onclick="saveChild()">'+(editing?'Save changes':'Add child')+'</button>'+
-     '<button class="ghost" onclick="closeForm()">Cancel</button></div></div>';
+     '<button class="ghost" onclick="closeForm()">Cancel</button></div>'+
+   '<div class="floatsave"><button class="primary" onclick="saveChild()">'+(editing?'Save changes':'Save child')+'</button></div></div>';
 }
 function staffForm(s,editing){
   return '<div class="formcard"><h2>'+(editing?'Edit staff member':'Add staff member')+'</h2>'+
+   '<div class="formactions topsave"><button class="primary" onclick="saveStaff()">'+(editing?'Save changes':'Add staff member')+'</button>'+
+     '<button class="ghost" onclick="closeForm()">Cancel</button></div>'+
    '<input type="hidden" id="f_id" value="'+esc(s.id||'')+'">'+
    '<div class="grid">'+
      fld('f_name','Name',s.name)+
@@ -687,12 +699,13 @@ function staffForm(s,editing){
      '<div class="field full"><label for="f_children">Their own children (optional)</label><textarea id="f_children" placeholder="Names, schools, year groups">'+esc(s.childrenNote||'')+'</textarea></div>'+
    '</div>'+
    '<div class="formactions"><button class="primary" onclick="saveStaff()">'+(editing?'Save changes':'Add staff member')+'</button>'+
-     '<button class="ghost" onclick="closeForm()">Cancel</button></div></div>';
+     '<button class="ghost" onclick="closeForm()">Cancel</button></div>'+
+   '<div class="floatsave"><button class="primary" onclick="saveStaff()">'+(editing?'Save changes':'Save staff')+'</button></div></div>';
 }
 function v(id){ const e=document.getElementById(id); return e?e.value.trim():''; }
 function saveChild(){
   const rec={ id:v('f_id')||uid(), type:'child',
-    first:v('f_first'), surname:v('f_surname'), preferred:v('f_preferred'), dob:v('f_dob'),
+    first:v('f_first'), middle:v('f_middle'), surname:v('f_surname'), preferred:v('f_preferred'), dob:v('f_dob'),
     sex:v('f_sex'), address:v('f_address'), homephone:v('f_homephone'),
     doctorname:v('f_doctorname'), doctorphone:v('f_doctorphone'),
     ec1name:v('f_ec1name'), ec1rel:v('f_ec1rel'), ec1phone:v('f_ec1phone'), ec2name:v('f_ec2name'), ec2rel:v('f_ec2rel'), ec2phone:v('f_ec2phone'),
