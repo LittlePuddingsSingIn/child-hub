@@ -79,7 +79,7 @@
   .subhead{grid-column:1/-1;font-family:Georgia,serif;color:var(--green);font-size:15px;margin:6px 0 -2px;border-top:1px dashed var(--line);padding-top:12px}
   .formactions{display:flex;gap:10px;margin-top:18px}
   .formactions.topsave{margin-top:4px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line)}
-  .floatsave{position:fixed;right:22px;bottom:22px;z-index:40;display:flex;gap:8px}
+  .floatsave{position:fixed;right:22px;top:168px;z-index:4;display:flex;gap:8px}
   .floatsave button{box-shadow:0 4px 16px rgba(0,0,0,.20)}
   @media print{ .floatsave{display:none} }
   .agehint{font-size:12px;color:var(--grey);font-style:italic}
@@ -331,7 +331,7 @@
 
 <script>
 /* ---------- build stamp (bump this whenever you upload a new version) ---------- */
-var BUILD='2026-11-07f';
+var BUILD='2026-11-07h';
 /* ---------- band configuration (edit colours here if you like) ---------- */
 const BANDS = [
   { name:'Under 1s', color:'#C0392B' },
@@ -568,7 +568,14 @@ function openForm(type, person){
   window.scrollTo(0,0);
   var firstField=document.getElementById('f_first');
   if(firstField){ try{ firstField.focus({preventScroll:true}); }catch(e){ firstField.focus(); } }
+  positionFloatSave();
 }
+// keep the floating Save tucked just under the toolbar line, at any width or scroll position
+function positionFloatSave(){ var fs=document.querySelector('.floatsave'); if(!fs) return;
+  var bar=document.querySelector('.bar'); var y=bar?Math.max(bar.getBoundingClientRect().bottom,8):160;
+  fs.style.top=(y+10)+'px'; }
+window.addEventListener('scroll', positionFloatSave, {passive:true});
+window.addEventListener('resize', positionFloatSave);
 function updateAgeHint(){
   const dob=document.getElementById('f_dob').value;
   const h=document.getElementById('ageHint');
@@ -590,8 +597,12 @@ function childForm(c,editing){
      fld('f_preferred','Known as (optional)',c.preferred)+
      '<div class="field"><label for="f_dob">Date of birth</label><input id="f_dob" type="date" value="'+esc(c.dob||'')+'"><span class="agehint" id="ageHint"></span></div>'+
      '<div class="field"><label for="f_sex">Sex</label><select id="f_sex"><option value="">Not recorded</option><option value="Male"'+(c.sex==='Male'?' selected':'')+'>Male</option><option value="Female"'+(c.sex==='Female'?' selected':'')+'>Female</option></select></div>'+
-     '<div class="field full"><label for="f_address">Home address</label><textarea id="f_address" placeholder="House, street, town, postcode">'+esc(c.address||'')+'</textarea></div>'+
+     fld('f_addr1','Street (house number and street)',c.addr1||c.address,'text','e.g. 12 Woodland Road')+
+     fld('f_addr2','Address line 2 (optional)',c.addr2,'text','e.g. Boultham')+
+     fld('f_town','Town',c.town)+
+     fld('f_postcode','Postcode',c.postcode)+
      fld('f_homephone','Home telephone',c.homephone,'tel')+
+     '<div class="field"></div>'+
      '<div class="field"></div>'+
      '<div class="subhead">First parent or carer</div>'+
      fld('f_c1label','Label',c.c1label||'Mum','text','Mum')+
@@ -673,7 +684,7 @@ function childForm(c,editing){
    '</div>'+
    '<div class="formactions"><button class="primary" onclick="saveChild()">'+(editing?'Save changes':'Add child')+'</button>'+
      '<button class="ghost" onclick="closeForm()">Cancel</button></div>'+
-   '<div class="floatsave"><button class="primary" onclick="saveChild()">'+(editing?'Save changes':'Save child')+'</button></div></div>';
+   '<div class="floatsave"><button class="primary" onclick="saveChild()" title="'+(editing?'Save changes':'Save child')+'">Save</button></div></div>';
 }
 function staffForm(s,editing){
   return '<div class="formcard"><h2>'+(editing?'Edit staff member':'Add staff member')+'</h2>'+
@@ -688,6 +699,11 @@ function staffForm(s,editing){
      fld('f_role','Role',s.role,'text','e.g. Childminder, Apprentice')+
      '<div class="field"><label for="f_sdob">Date of birth</label><input id="f_sdob" type="date" value="'+esc(s.dob||'')+'"><span class="agehint">For identification in an emergency.</span></div>'+
      '<div class="field full"><label style="display:flex;align-items:center;gap:8px;text-transform:none;font-weight:400;color:var(--ink)"><input type="checkbox" id="f_inratio" '+(s.inRatio!==false?'checked':'')+'> Counts in ratio (untick an apprentice until their suitability is approved by Ofsted)</label></div>'+
+     '<div class="subhead">Home address</div>'+
+     fld('f_addr1','Street (house number and street)',s.addr1||s.address,'text','e.g. 12 Woodland Road')+
+     fld('f_addr2','Address line 2 (optional)',s.addr2)+
+     fld('f_town','Town',s.town)+
+     fld('f_postcode','Postcode',s.postcode)+
      '<div class="subhead">Next of kin</div>'+
      fld('f_nok','Name',s.nok)+
      fld('f_nokrel','Relationship',s.nokrel)+
@@ -704,13 +720,16 @@ function staffForm(s,editing){
    '</div>'+
    '<div class="formactions"><button class="primary" onclick="saveStaff()">'+(editing?'Save changes':'Add staff member')+'</button>'+
      '<button class="ghost" onclick="closeForm()">Cancel</button></div>'+
-   '<div class="floatsave"><button class="primary" onclick="saveStaff()">'+(editing?'Save changes':'Save staff')+'</button></div></div>';
+   '<div class="floatsave"><button class="primary" onclick="saveStaff()" title="'+(editing?'Save changes':'Save staff')+'">Save</button></div></div>';
 }
 function v(id){ const e=document.getElementById(id); return e?e.value.trim():''; }
 function saveChild(){
   const rec={ id:v('f_id')||uid(), type:'child',
     first:v('f_first'), middle:v('f_middle'), surname:v('f_surname'), preferred:v('f_preferred'), dob:v('f_dob'),
-    sex:v('f_sex'), address:v('f_address'), homephone:v('f_homephone'),
+    sex:v('f_sex'),
+    addr1:v('f_addr1'), addr2:v('f_addr2'), town:v('f_town'), postcode:v('f_postcode'),
+    address:[v('f_addr1'),v('f_addr2'),v('f_town'),v('f_postcode')].filter(Boolean).join(', '),
+    homephone:v('f_homephone'),
     doctorname:v('f_doctorname'), doctorphone:v('f_doctorphone'),
     ec1name:v('f_ec1name'), ec1rel:v('f_ec1rel'), ec1phone:v('f_ec1phone'), ec2name:v('f_ec2name'), ec2rel:v('f_ec2rel'), ec2phone:v('f_ec2phone'),
     c1label:v('f_c1label'), c1name:v('f_c1name'), c1mobile:v('f_c1mobile'), c1work:v('f_c1work'), c1workphone:v('f_c1workphone'), c1email:v('f_c1email'),
@@ -736,7 +755,10 @@ function saveStaff(){
   const rec={ id:v('f_id')||uid(), type:'staff',
     first:v('f_first'), middle:v('f_middle'), surname:v('f_surname'), preferred:v('f_preferred'),
     name:([v('f_first'),v('f_middle'),v('f_surname')].filter(Boolean).join(' '))||v('f_first')||v('f_surname'),
-    role:v('f_role'), dob:v('f_sdob'), inRatio:(document.getElementById('f_inratio')||{}).checked!==false, nok:v('f_nok'), nokrel:v('f_nokrel'), nokphone:v('f_nokphone'),
+    role:v('f_role'), dob:v('f_sdob'), inRatio:(document.getElementById('f_inratio')||{}).checked!==false,
+    addr1:v('f_addr1'), addr2:v('f_addr2'), town:v('f_town'), postcode:v('f_postcode'),
+    address:[v('f_addr1'),v('f_addr2'),v('f_town'),v('f_postcode')].filter(Boolean).join(', '),
+    nok:v('f_nok'), nokrel:v('f_nokrel'), nokphone:v('f_nokphone'),
     hours: DAYS.filter(d=>{const e=document.getElementById('f_on_'+d.slice(0,3));return e&&e.checked;})
         .map(d=>{const ab=d.slice(0,3);return {day:d, from:v('f_from_'+ab), to:v('f_to_'+ab), from2:v('f_from2_'+ab), to2:v('f_to2_'+ab)};}),
     allergies:v('f_allergies'), medication:v('f_medication'), emergency:v('f_emergency'), childrenNote:v('f_children') };
