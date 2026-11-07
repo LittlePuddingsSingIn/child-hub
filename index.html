@@ -99,6 +99,30 @@
   .atable td.an{font-weight:700;white-space:nowrap}
   .atable tr:nth-child(even) td{background:#FCF6F4}
   .anone{color:var(--grey);font-style:italic}
+  /* kitchen allergy poster */
+  .akgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px}
+  .akcard{border:2px solid var(--line);border-radius:12px;padding:12px 14px;break-inside:avoid}
+  .akcard.hasallergy{border-color:var(--burg);background:#FDF6F5}
+  .akname{font-family:Georgia,serif;font-weight:700;font-size:19px;color:var(--ink);display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .akage{font-weight:400;font-style:italic;font-size:13px;color:var(--grey);white-space:nowrap}
+  .akallergy{margin-top:8px;background:var(--burg);color:#fff;border-radius:6px;padding:8px 12px;font-size:20px;font-weight:700;text-align:center;letter-spacing:.02em}
+  .aknoallergy{margin-top:8px;color:var(--grey);font-style:italic;font-size:13px}
+  .akline{margin-top:7px;font-size:14px}
+  .akline b{color:var(--grey);text-transform:uppercase;font-size:11px;letter-spacing:.04em}
+  .akmed{margin-top:7px;font-size:14px;font-weight:700;color:#8f4415;background:#FBE3CE;border-radius:6px;padding:5px 10px}
+  @media print{ .akcard{break-inside:avoid} .akallergy,.akmed{-webkit-print-color-adjust:exact;print-color-adjust:exact} }
+  /* contract */
+  .ctitle{font-family:Georgia,serif;color:var(--green);font-size:26px;margin:4px 0 2px}
+  .cparties{font-size:14px;line-height:1.6;margin:10px 0}
+  .cclause{margin:10px 0}
+  .cclause h4{font-family:Georgia,serif;color:var(--green);font-size:15px;margin:14px 0 4px}
+  .cclause p{font-size:13.5px;line-height:1.55;margin:4px 0}
+  .cclause ul{margin:4px 0 4px 18px;padding:0}
+  .cclause li{font-size:13.5px;line-height:1.5;margin:3px 0}
+  .csign{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:20px}
+  .csignbox{border:1px solid var(--line);border-radius:10px;padding:14px}
+  .csignbox .cl{font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--grey);font-weight:700;margin-top:10px}
+  .csignline{border-bottom:1px solid #9a948c;height:26px;margin-top:2px}
   /* record form */
   .recform{margin:0 auto}
   .recform + .recform{margin-top:30px;border-top:2px dashed var(--line);padding-top:24px}
@@ -134,6 +158,8 @@
   .row .ph{color:var(--ink);white-space:nowrap}
   .alert{margin:7px 0 2px;text-align:center;font-weight:700;font-size:13px;color:var(--burg);
     background:var(--rose);border-radius:4px;padding:5px 8px;letter-spacing:.03em}
+  .permline{display:flex;gap:8px;font-size:12px;margin-top:5px;color:var(--ink)}
+  .permline .lbl{font-weight:700;color:var(--grey);white-space:nowrap}
   .staffblock{border-left:4px solid var(--grey);padding:4px 0 4px 14px;margin:0 0 16px}
   .docfoot{margin-top:26px;border-top:1px solid var(--line);padding-top:8px;font-size:11px;color:var(--grey);
     display:flex;justify-content:space-between}
@@ -245,12 +271,15 @@
       <button class="primary" onclick="generate('emergency')">Generate emergency document</button>
       <button class="primary" onclick="generate('allergy')">Generate allergy sheet</button>
       <button class="primary" onclick="generate('record')">Generate record forms</button>
+      <button class="primary" onclick="generate('contract')">Generate contracts</button>
+      <button class="primary" onclick="generate('review')">Review forms</button>
       <button class="primary" onclick="generate('firebag')">Fire bag sheet</button>
       <button class="primary" onclick="generate('schedule')">Weekly schedule</button>
       <button class="primary" onclick="openTripPlanner()">Trip register</button>
       <button class="ghost" onclick="openAvailability()">Availability</button>
       <button class="ghost" onclick="openFunding()">Funding</button>
       <button class="ghost" onclick="openPermissions()">Permissions</button>
+      <button class="ghost" onclick="openRiskReports()">Risk reports</button>
       <button class="ghost" onclick="openHolidayPlanner()">Holiday planner</button>
       <button class="ghost" onclick="openReviews()">Reviews</button>
       <button class="ghost" onclick="openChecklist()">Checklists</button>
@@ -298,7 +327,7 @@
 
 <script>
 /* ---------- build stamp (bump this whenever you upload a new version) ---------- */
-var BUILD='2026-11-05c';
+var BUILD='2026-11-07c';
 /* ---------- band configuration (edit colours here if you like) ---------- */
 const BANDS = [
   { name:'Under 1s', color:'#C0392B' },
@@ -385,11 +414,14 @@ function dismissBanner(){ const b=document.getElementById('syncBanner'); if(b) b
 window.addEventListener('beforeunload', function(e){ if(fileDirty){ e.preventDefault(); e.returnValue=''; } });
 function loadLS(){ try{ const r=localStorage.getItem(LS); if(r) data=JSON.parse(r); }catch(e){} }
 
+function backupStamp(){ var d=new Date(); function p(n){return (n<10?'0':'')+n;}
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'_'+p(d.getHours())+p(d.getMinutes()); }
 function saveFile(){
+  data.savedByBuild=BUILD; data.savedAt=new Date().toISOString();
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download='little-puddings-emergency-data.json'; a.click(); URL.revokeObjectURL(a.href);
-  fileDirty=false; updateDirty(); flag('Data file saved');
+  a.download='little-puddings-child-hub_backup_'+backupStamp()+'.json'; a.click(); URL.revokeObjectURL(a.href);
+  fileDirty=false; updateDirty(); flag('Backup saved ('+backupStamp()+')');
 }
 function csvCell(v){ v=(v==null?'':String(v)); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; }
 function exportSpreadsheet(){
@@ -410,11 +442,15 @@ function exportSpreadsheet(){
   flag('Spreadsheet export saved');
 }
 function loadFile(ev){
-  const f=ev.target.files[0]; if(!f) return; const r=new FileReader();
+  const f=ev.target.files[0]; if(!f){ return; } const r=new FileReader();
+  var haveData=(data.children&&data.children.length)||(data.staff&&data.staff.length);
+  if(haveData && !confirm('Loading a backup will replace everything currently in the hub on this device with the contents of that file. Your current data is not changed in OneDrive until you Save to OneDrive afterwards. Continue?')){ ev.target.value=''; return; }
   r.onload=()=>{ try{ const d=JSON.parse(r.result);
-      data={children:d.children||[], staff:d.staff||[], settings:d.settings||{}, holiday:d.holiday||defaultHoliday()}; ensureModel(); persist(); renderLists();
-      fileDirty=false; updateDirty(); dismissBanner();
-      flag('Data loaded'); }catch(e){ alert('That file could not be read. Please choose a data file saved from this tool.'); } };
+      data=Object.assign({children:[],staff:[],settings:{},holiday:defaultHoliday()}, d);
+      data.children=d.children||[]; data.staff=d.staff||[]; data.settings=d.settings||{}; data.holiday=d.holiday||defaultHoliday();
+      ensureModel(); persist(); MAINVIEW='landing'; renderMain();
+      fileDirty=false; updateDirty();
+      flag('Backup loaded'+(d.savedAt?' (saved '+fmtDate(d.savedAt.slice(0,10))+')':'')); }catch(e){ alert('That file could not be read. Please choose a data file saved from this tool.'); } };
   r.readAsText(f); ev.target.value='';
 }
 
@@ -431,6 +467,7 @@ function renderLists(){ if(MAINVIEW==='children'||MAINVIEW==='staff') renderMain
 function renderLandingInto(){
   var m=mnt(); var nc=(data.children||[]).length, ns=(data.staff||[]).length;
   var overdue=(data.children||[]).filter(function(c){return onRoll(c)&&reviewOverdue(c);}).length;
+  var gaps=(data.children||[]).filter(function(c){return childMissing(c).length;}).length;
   m.innerHTML='<div class="formcard" style="margin-bottom:22px"><h2>Welcome</h2>'+
     '<p style="color:var(--grey);font-size:14px;margin-top:0">This is your central record for Little Puddings. Pick <b>Children</b> or <b>Staff</b> to see your lists, or any button along the top for availability, documents and the rest.</p>'+
     '<div style="display:flex;gap:12px;flex-wrap:wrap;margin:10px 0 4px">'+
@@ -439,32 +476,61 @@ function renderLandingInto(){
       '<button class="ghost" onclick="openForm(\'child\')">+ Add child</button>'+
       '<button class="ghost" onclick="openForm(\'staff\')">+ Add staff</button>'+
     '</div>'+
+    (gaps?('<div style="background:#FBF3DC;border-left:4px solid #D4A017;border-radius:8px;padding:12px 16px;margin-top:14px;font-size:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span style="flex:1;min-width:240px;color:#8a6d00"><b>To do:</b> '+gaps+' child'+(gaps===1?' still needs':'ren still need')+' some details filling in.</span><button class="primary" onclick="openMissing()">See what’s missing</button></div>'):'')+
     (overdue?('<div style="background:#F4DEDA;border-left:4px solid #A13A2A;border-radius:8px;padding:12px 16px;margin-top:14px;font-size:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span style="flex:1;min-width:240px;color:#A13A2A"><b>Reminder:</b> '+overdue+' child'+(overdue===1?'’s details need':'ren’s details need')+' confirming with parents (not reviewed in over six months).</span><button class="primary" onclick="openReviews()">Review now</button></div>'):'')+
     '</div>'+
     '<div class="syncbanner"><div class="sbtxt"><b>Working across your laptops?</b> Load your latest data file from OneDrive before you start, then Save it back when you finish, so both machines stay in step.</div>'+
       '<div class="sbbtns"><button class="primary" onclick="openOneDrive()">OneDrive</button></div></div>';
   window.scrollTo(0,0);
 }
+// youngest first (most recent DOB), children with no DOB yet at the foot
+function ageSortKey(c){ return c.dob ? new Date(c.dob).getTime() : -8.64e15; }
+function childrenByAge(){ return (data.children||[]).slice().sort(function(a,b){
+  var ka=ageSortKey(a), kb=ageSortKey(b); if(kb!==ka) return kb-ka; return fullName(a).localeCompare(fullName(b)); }); }
+var BASIS_LABEL={ayr:'All year',term:'Term only',holidays:'Holidays'};
+// essential details that make a record usable; returns the list of what is missing
+function childMissing(c){ var m=[];
+  if(!c.dob) m.push('Date of birth');
+  if(!((c.c1name&&c.c1mobile)||(c.c2name&&c.c2mobile))) m.push('Parent or carer name and mobile');
+  if(!((c.ec1name&&c.ec1phone)||(c.ec2name&&c.ec2phone))) m.push('Emergency contact');
+  if(!((c.attendance||[]).some(function(a){return a.day;}))) m.push('Attendance days and times');
+  if(!c.start) m.push('Start date');
+  if(!c.basis) m.push('Booking basis (all year / term / holidays)');
+  return m; }
 function renderChildrenInto(){
-  var m=mnt(); var ch=(data.children||[]).slice().sort(function(a,b){ return new Date(b.dob||0)-new Date(a.dob||0); });
-  var head='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">Children <span class="count">'+(ch.length?'('+ch.length+')':'')+'</span></h2><span class="spacer" style="flex:1"></span><button class="primary" onclick="openForm(\'child\')">+ Add child</button></div>';
+  var m=mnt(); var ch=childrenByAge();
+  var head='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">Children <span class="count">'+(ch.length?'('+ch.length+')':'')+'</span></h2><span class="spacer" style="flex:1"></span><button class="ghost" onclick="openMissing()">What’s missing</button><button class="primary" onclick="openForm(\'child\')">+ Add child</button></div>';
   var body;
-  if(!ch.length){ body='<div class="empty">No children yet. Use “Add child” to start your list.</div>'; }
+  if(!ch.length){ body='<div class="empty">No children yet. Use “Add child” to start your list. You can add just names first, then fill the rest in later.</div>'; }
   else{
-    var groups=[['ayr','All year round'],['term','Term time only'],['holidays','Holidays only'],['','Basis not set']];
-    var rowFor=function(c){ var b=bandOf(c);
-      return '<tr><td><b>'+esc(fullName(c))+'</b>'+(hasAllergyInfo(c)?' <span title="allergy or dietary noted" style="color:var(--burg)">⚠</span>':'')+(reviewOverdue(c)?' <span title="parent review overdue" style="color:var(--burg)">◷</span>':'')+'</td>'+
+    var rowFor=function(c){ var b=bandOf(c); var miss=childMissing(c);
+      return '<tr><td><b>'+esc(fullName(c))+'</b>'+(hasAllergyInfo(c)?' <span title="allergy or dietary noted" style="color:var(--burg)">⚠</span>':'')+(reviewOverdue(c)?' <span title="parent review overdue" style="color:var(--burg)">◷</span>':'')+
+        (miss.length?' <span title="'+esc(miss.join(', '))+'" style="display:inline-block;background:#FBF3DC;color:#8a6d00;border:1px solid #E6D08a;border-radius:20px;padding:0 8px;font-size:11px;font-weight:700">needs '+miss.length+'</span>':'')+'</td>'+
         '<td><span class="bandpill" style="background:'+bandColor(b)+'">'+b+'</span></td>'+
+        '<td style="font-size:12px;color:var(--grey)">'+esc(BASIS_LABEL[c.basis]||'–')+'</td>'+
         '<td>'+esc(fmtDate(c.dob))+'</td><td>'+esc(attendsOf(c))+'</td>'+
-        '<td><div class="rowact"><button class="ghost" onclick="generate(\'record\',\''+c.id+'\')">Form</button><button class="ghost" onclick="openParentLink(\''+c.id+'\')">Link</button><button class="ghost" onclick="editPerson(\''+c.id+'\',\'child\')">Edit</button>'+
+        '<td><div class="rowact"><button class="ghost" onclick="editPerson(\''+c.id+'\',\'child\')">Edit</button><button class="ghost" onclick="generate(\'record\',\''+c.id+'\')">Form</button><button class="ghost" onclick="generate(\'contract\',\''+c.id+'\')">Contract</button><button class="ghost" onclick="generate(\'review\',\''+c.id+'\')">Review</button><button class="ghost" onclick="openRiskForm(\''+c.id+'\')">Risk</button><button class="ghost" onclick="openParentLink(\''+c.id+'\')">Link</button>'+
         '<button class="danger" onclick="del(\''+c.id+'\',\'child\')">Delete</button></div></td></tr>'; };
-    body='';
-    groups.forEach(function(g){ var rows=ch.filter(function(c){return (c.basis||'')===g[0];}); if(!rows.length) return;
-      body+='<div class="subhead" style="margin-top:10px">'+g[1]+' <span style="color:var(--grey);font-weight:400;font-size:12px">('+rows.length+')</span></div>'+
-        '<table><thead><tr><th>Name</th><th>Age band</th><th>DOB</th><th>Attends</th><th></th></tr></thead><tbody>'+rows.map(rowFor).join('')+'</tbody></table>';
-    });
+    body='<p style="color:var(--grey);font-size:12px;margin:8px 0">Listed youngest first. Children with no date of birth yet sit at the foot until you add one.</p>'+
+      '<table><thead><tr><th>Name</th><th>Age band</th><th>Basis</th><th>DOB</th><th>Attends</th><th></th></tr></thead><tbody>'+ch.map(rowFor).join('')+'</tbody></table>';
   }
   m.innerHTML='<div class="formcard">'+head+'<div style="margin-top:12px">'+body+'</div></div>'; window.scrollTo(0,0);
+}
+function openMissing(){ var m=mnt(); var ch=childrenByAge();
+  var withGaps=ch.map(function(c){ return {c:c, miss:childMissing(c)}; }).filter(function(x){return x.miss.length;});
+  var complete=ch.length-withGaps.length;
+  var body;
+  if(!ch.length){ body='<div class="empty">No children added yet. Add your names first, then this will show what each one still needs.</div>'; }
+  else if(!withGaps.length){ body='<div style="background:#E8F1EC;border-left:4px solid #1A7A4A;border-radius:8px;padding:12px 16px;font-size:14px">All '+ch.length+' children have their essential details. Nicely done.</div>'; }
+  else { body='<p style="font-size:14px;margin:6px 0">'+withGaps.length+' of '+ch.length+' children still need details ('+complete+' complete). Youngest first.</p>'+
+      withGaps.map(function(x){ return '<div style="border:1px solid var(--line);border-left:4px solid #D4A017;border-radius:8px;padding:10px 14px;margin:8px 0">'+
+        '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><b>'+esc(fullName(x.c))+'</b>'+(x.c.dob?' <span style="color:var(--grey);font-size:12px">'+esc(fmtDate(x.c.dob))+'</span>':'')+'<span class="spacer" style="flex:1"></span><button class="primary" onclick="editPerson(\''+x.c.id+'\',\'child\')">Add details</button></div>'+
+        '<div style="margin-top:6px;font-size:13px">Still needs: '+x.miss.map(function(mm){return '<span style="display:inline-block;background:#FBF3DC;border:1px solid #E6D08a;border-radius:20px;padding:1px 9px;margin:2px 4px 0 0">'+esc(mm)+'</span>';}).join('')+'</div></div>'; }).join('');
+  }
+  m.innerHTML='<div class="formcard"><h2>What’s missing</h2>'+
+    '<p style="color:var(--grey);font-size:13px;margin-top:0">Add your children’s names first, then work down this list filling each one in. It checks for the essentials: date of birth, a parent contact, an emergency contact, attendance, start date and booking basis.</p>'+
+    body+'<div class="formactions" style="margin-top:14px"><button class="ghost" onclick="showChildren()">Back to children</button></div></div>';
+  m.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function renderStaffInto(){
   var m=mnt(); var st=(data.staff||[]);
@@ -668,6 +734,50 @@ function del(id,type){ const key=type==='child'?'children':'staff';
 function closeForm(){ renderMain(); }
 
 /* ---------- fees & terms settings ---------- */
+/* ---------- individual child risk assessment ---------- */
+/* q types: 'yn' = Yes/No + note; 'text' = free text. flag: which answer is worth surfacing (for reports and the deputy view) */
+const RISK_SECTIONS = [
+  {name:'Mealtimes and feeding', qs:[
+    {key:'highchair', q:'Uses a highchair?', type:'yn', flag:'yes'},
+    {key:'booster', q:'Uses a booster seat?', type:'yn', flag:'yes'},
+    {key:'softcutlery', q:'Needs plastic or soft cutlery (not metal)?', type:'yn', flag:'yes'},
+    {key:'hotcold', q:'Aware of hot and cold food and drinks?', type:'yn', flag:'no'},
+    {key:'foodcut', q:'Needs food cut in a specific way (beyond standard age-appropriate preparation)?', type:'yn', flag:'yes'},
+  ]},
+  {name:'Independence and hygiene', qs:[
+    {key:'handwash', q:'Can wash and dry hands independently?', type:'yn', flag:'no'},
+    {key:'toilet', q:'Uses the toilet independently?', type:'yn', flag:'no'},
+    {key:'dressing', q:'Needs assistance with dressing or undressing?', type:'yn', flag:'yes'},
+  ]},
+  {name:'Mobility and physical safety', qs:[
+    {key:'stairs', q:'Confident on the stairs?', type:'yn', flag:'no'},
+    {key:'garden1to1', q:'Can be in the garden without one-to-one supervision?', type:'yn', flag:'no'},
+    {key:'reins', q:'Requires reins or a wrist strap when out walking?', type:'yn', flag:'yes'},
+    {key:'pushchair', q:'Needs a pushchair or pram for outings?', type:'yn', flag:'yes'},
+    {key:'carseat', q:'Car seat required (type)', type:'text'},
+  ]},
+  {name:'Safety awareness', qs:[
+    {key:'cupboardlocks', q:'Needs child locks on kitchen cupboards?', type:'yn', flag:'yes'},
+    {key:'animals', q:'Has experience of dogs and other animals?', type:'yn', flag:'no'},
+    {key:'behaviours', q:'Behaviours that require specific safety awareness (e.g. bolting, climbing, mouthing objects)?', type:'yn', flag:'yes'},
+    {key:'physicalneeds', q:'Physical needs that affect how they are supported during play or outings?', type:'yn', flag:'yes'},
+  ]},
+  {name:'Sleep (if applicable)', qs:[
+    {key:'sleeps', q:'Sleeps at the setting?', type:'yn', flag:'yes'},
+    {key:'dummy', q:'Uses a dummy during sleep?', type:'yn'},
+    {key:'comforter', q:'Uses a comforter during sleep? (not permitted under 12 months)', type:'yn', flag:'yes'},
+    {key:'sleeproutine', q:'Specific sleep routines or preferences to be aware of', type:'text'},
+  ]},
+];
+function riskQ(key){ for(var i=0;i<RISK_SECTIONS.length;i++){ var q=RISK_SECTIONS[i].qs.find(function(x){return x.key===key;}); if(q) return q; } return null; }
+function riskAns(c,key){ return (c.risk&&c.risk.answers&&c.risk.answers[key])||{}; }
+// flagged risk items for a child: {label, detail} for anything meeting its flag condition or any text answer
+function riskFlags(c){ var out=[];
+  RISK_SECTIONS.forEach(function(sec){ sec.qs.forEach(function(q){ var a=riskAns(c,q.key);
+    if(q.type==='text'){ if(a.text) out.push({label:q.q, detail:a.text}); }
+    else if(q.flag && a.ans===q.flag){ out.push({label:q.q.replace(/\?$/,''), detail:a.note||''}); }
+  }); });
+  return out; }
 const PERMISSIONS = [
   {key:'firstaid',             label:'Emergency first aid and medical treatment'},
   {key:'solecare',             label:'Sole care by an assistant or apprentice (up to 2 hours)'},
@@ -686,16 +796,14 @@ const PERMISSIONS = [
 ];
 function permLabel(key){ var p=PERMISSIONS.find(function(x){return x.key===key;}); return p?p.label:key; }
 const FEE_ROWS = [
-  {key:'fullDay',  label:'Full day (Under 5s, 6 hours or more)',     def:'\u00a360.00 per day'},
-  {key:'halfDay',  label:'Half day (Under 5s, 6 hours or less)',     def:'\u00a340.00 per session'},
-  {key:'wrapU2',   label:'Wrap-around, 9 months to under 2s',        def:'\u00a36.25 per hour'},
-  {key:'wrap2',    label:'Wrap-around, 2-year-olds',                 def:'\u00a36.75 per hour'},
-  {key:'wrap34',   label:'Wrap-around, 3 & 4-year-olds',             def:'\u00a37.50 per hour'},
-  {key:'schoolAge',label:'School-age children (term time)',          def:'\u00a36.00 per hour'},
+  {key:'fullDay',  label:'Full day (Under 5s, over 6 hours)',        def:'\u00a360.00 per day'},
+  {key:'halfDay',  label:'Half day (Under 5s, 6 hours)',             def:'\u00a340.00 per half day'},
+  {key:'schoolAge',label:'School-age children, wrap-around (term time)', def:'\u00a36.00 per hour'},
   {key:'adhoc',    label:'Ad hoc holiday care',                      def:'\u00a36.25 per hour, minimum 6 hours per day. 50% non-refundable deposit at booking.'},
   {key:'retainer', label:'Retainer (all-year-round contracts only)', def:'Half contracted rate, up to 10 days pro rata per year. Minimum 7 days notice. Not for term-time-only contracts.'},
   {key:'latePay',  label:'Late payment',                            def:'\u00a35.00 for each day a payment is received late.', standard:true},
-  {key:'lateCol',  label:'Late collection / early drop-off',        def:'\u00a35.00 per 15 minutes before or after contracted time.', standard:true},
+  {key:'lateCol',  label:'Late collection',                         def:'\u00a35.00 per 15 minutes beyond the contracted collection time.', standard:true},
+  {key:'earlyDrop',label:'Early drop-off (persistent, after discussion)', def:'Charged at the standard hourly rate for the additional time.', standard:true},
 ];
 function feeRows(){ const s=data.settings||{};
   return FEE_ROWS.map(r=>({label:r.label, rate:(s[r.key]!=null && s[r.key]!=='')?s[r.key]:r.def})); }
@@ -707,11 +815,34 @@ function recordFeeTableRows(c){
   FEE_ROWS.filter(r=>r.standard).forEach(r=>rows.push({label:r.label, rate:feeRate(r.key)}));
   return rows;
 }
+const CONTRACT_FIELDS = [
+  {key:'provName',  label:'Provider name (as on formal documents)', def:''},
+  {key:'provAddr',  label:'Business address',                       def:''},
+  {key:'provMobile',label:'Setting mobile',                         def:''},
+  {key:'provEmail', label:'Setting email',                          def:''},
+  {key:'provOfsted',label:'Ofsted registration',                    def:''},
+  {key:'provUrn',   label:'Ofsted registration (URN) number',       def:''},
+  {key:'provIco',   label:'ICO registration number',                def:''},
+  {key:'provInsurer',label:'Public liability insurer',              def:''},
+  {key:'provPolicy',label:'Public liability policy number',         def:''},
+  {key:'provPolicyExp',label:'Insurance expiry date',              def:''},
+  {key:'noticeWeeks',label:'Notice period (either side)',           def:'4 weeks in writing'},
+  {key:'settlingWeeks',label:'Settling-in period (no notice needed either side)', def:'The first 2 weeks'},
+  {key:'depositTerms',label:'Deposit / securing a place',           def:'A non-refundable deposit of two weeks’ fees secures the place and is offset against the first invoice.'},
+  {key:'reviewMonths',label:'Review the contract every',            def:'6 months'},
+  {key:'forcedClosureTerms',label:'If forced to close (beyond my control)', def:'If the setting is forced to close for reasons beyond its control, the place is retained at no charge for the period of closure.'},
+  {key:'policiesList',label:'Policies named in the contract', def:'the Safeguarding, Positive Behaviour and Relationships, Complaints, Equality Diversity and Inclusion, Administration of Medication and Photography and Images policies, and the Data Protection Policy and Privacy Notice'},
+];
 function settingsForm(s){ s=s||{};
   return '<div class="formcard"><h2>Fees &amp; terms</h2>'+
-   '<p style="color:var(--grey);font-size:13px;margin-top:0">These print as a fee schedule on every record form. They are pre-filled with your current rates; edit any to update them.</p>'+
+   '<p style="color:var(--grey);font-size:13px;margin-top:0">These print as a fee schedule on every record form and in the contract. They are pre-filled with your current rates; edit any to update them.</p>'+
    '<div class="grid">'+
      FEE_ROWS.map(r=>'<div class="field full"><label for="s_'+r.key+'">'+esc(r.label)+'</label><input id="s_'+r.key+'" value="'+esc(s[r.key]!=null?s[r.key]:r.def)+'"></div>').join('')+
+   '</div>'+
+   '<div class="subhead" style="margin-top:14px">Provider and contract details</div>'+
+   '<p style="color:var(--grey);font-size:13px;margin-top:0">These head the contract. Set them once.</p>'+
+   '<div class="grid">'+
+     CONTRACT_FIELDS.map(r=>'<div class="field full"><label for="s_'+r.key+'">'+esc(r.label)+'</label><input id="s_'+r.key+'" value="'+esc(s[r.key]!=null?s[r.key]:r.def)+'"></div>').join('')+
    '</div>'+
    '<div class="formactions"><button class="primary" onclick="saveSettings()">Save</button>'+
      '<button class="ghost" onclick="closeForm()">Cancel</button></div></div>';
@@ -878,6 +1009,81 @@ function openPermissions(){ var m=document.getElementById('formMount');
     '<div class="formactions" style="margin-top:14px"><button class="ghost" onclick="closeForm()">Close</button></div></div>';
   m.scrollIntoView({behavior:'smooth',block:'start'});
 }
+/* ---------- risk reports by aspect ---------- */
+var RISKVIEW={key:'reins'};
+function openRiskReports(){ var m=document.getElementById('formMount');
+  var kids=(data.children||[]).filter(function(c){return onRoll(c);}).sort(function(a,b){return fullName(a).localeCompare(fullName(b));});
+  // dropdown of all questions
+  var opts=''; RISK_SECTIONS.forEach(function(sec){ opts+='<optgroup label="'+esc(sec.name)+'">'+sec.qs.map(function(q){ return '<option value="'+q.key+'"'+(q.key===RISKVIEW.key?' selected':'')+'>'+esc(q.q)+'</option>'; }).join('')+'</optgroup>'; });
+  var q=riskQ(RISKVIEW.key)||{};
+  function chip(c,extra,colour){ return '<span style="display:inline-block;border:1px solid '+colour+';border-radius:20px;padding:2px 10px;margin:3px 4px 0 0;font-size:13px">'+esc(fullName(c))+(extra?' <span style="color:var(--grey);font-size:11px">'+esc(extra)+'</span>':'')+'</span>'; }
+  var body='';
+  if(q.type==='text'){
+    var have=kids.filter(function(c){return riskAns(c,q.key).text;});
+    body='<div class="subhead">Recorded ('+have.length+')</div><div>'+(have.length?have.map(function(c){return chip(c,riskAns(c,q.key).text,'#1A7A4A');}).join(''):'<span class="anone">none</span>')+'</div>';
+  } else {
+    var yes=kids.filter(function(c){return riskAns(c,q.key).ans==='yes';}), no=kids.filter(function(c){return riskAns(c,q.key).ans==='no';}), none=kids.filter(function(c){return !riskAns(c,q.key).ans;});
+    body='<div class="subhead">Yes ('+yes.length+')</div><div>'+(yes.length?yes.map(function(c){return chip(c,riskAns(c,q.key).note,'#1A7A4A');}).join(''):'<span class="anone">none</span>')+'</div>'+
+      '<div class="subhead" style="margin-top:10px">No ('+no.length+')</div><div>'+(no.length?no.map(function(c){return chip(c,riskAns(c,q.key).note,'#A13A2A');}).join(''):'<span class="anone">none</span>')+'</div>'+
+      '<div class="subhead" style="margin-top:10px">Not recorded ('+none.length+')</div><div>'+(none.length?none.map(function(c){return chip(c,'','#CCCCCC');}).join(''):'<span class="anone">none</span>')+'</div>';
+  }
+  // all-flags overview
+  var flagged=kids.map(function(c){ return {c:c, f:riskFlags(c)}; }).filter(function(x){return x.f.length;});
+  var overview=flagged.length? flagged.map(function(x){ return '<div style="padding:6px 0;border-bottom:1px dashed var(--line)"><b>'+esc(fullName(x.c))+'</b>: '+x.f.map(function(f){return esc(f.label)+(f.detail?' ('+esc(f.detail)+')':'');}).join('; ')+'</div>'; }).join('') : '<div class="anone">No safety flags recorded yet.</div>';
+  m.innerHTML='<div class="formcard"><h2>Risk assessment reports</h2>'+
+    '<p style="color:var(--grey);font-size:13px;margin-top:0">Pick any item to see which children it applies to, with their notes. Set each child’s answers on their risk assessment.</p>'+
+    '<div class="field" style="max-width:520px"><label for="rr_sel">Aspect</label><select id="rr_sel" onchange="RISKVIEW.key=this.value;openRiskReports()">'+opts+'</select></div>'+
+    '<div style="margin-top:10px">'+body+'</div>'+
+    '<div class="subhead" style="margin-top:18px">All children with safety flags</div>'+
+    '<p style="color:var(--grey);font-size:12px;margin:2px 0 8px">Anything on a child’s assessment worth a second look (reins, not confident on stairs, specific behaviours, sleep and so on).</p>'+overview+
+    '<div class="formactions" style="margin-top:14px"><button class="ghost" onclick="closeForm()">Close</button></div></div>';
+  m.scrollIntoView({behavior:'smooth',block:'start'});
+}
+/* ---------- risk assessment form ---------- */
+function openRiskForm(cid){ var c=(data.children||[]).find(function(x){return x.id===cid;}); if(!c) return;
+  c.risk=c.risk||{}; var rk=c.risk; var A=rk.answers||{};
+  var m=document.getElementById('formMount');
+  var h='<div class="formcard"><h2>Risk assessment: '+esc(fullName(c))+'</h2>'+
+    '<p style="color:var(--grey);font-size:13px;margin-top:0">Review at registration, at the 6-week check-in, at least annually, and whenever the child’s needs change. Saved on the child’s record; print or report from the buttons at the foot.</p>'+
+    '<div class="grid"><div class="field"><label for="rk_date">Date of assessment</label><input id="rk_date" type="date" value="'+esc(rk.date||todayISO())+'"></div>'+
+      '<div class="field"><label for="rk_by">Assessed by</label><input id="rk_by" value="'+esc(rk.by||'')+'" placeholder="Name"></div></div>';
+  RISK_SECTIONS.forEach(function(sec){
+    h+='<div class="subhead" style="margin-top:14px">'+esc(sec.name)+'</div>';
+    sec.qs.forEach(function(q){ var a=A[q.key]||{};
+      if(q.type==='text'){
+        h+='<div class="field full"><label for="rk_'+q.key+'">'+esc(q.q)+'</label><input id="rk_'+q.key+'" value="'+esc(a.text||'')+'"></div>';
+      } else {
+        h+='<div class="field full" style="border-bottom:1px dashed var(--line);padding-bottom:8px"><label style="text-transform:none;font-weight:400;color:var(--ink);font-size:14px">'+esc(q.q)+'</label>'+
+          '<div style="display:flex;gap:16px;align-items:center;margin-top:4px;flex-wrap:wrap">'+
+            '<label style="display:flex;gap:5px;align-items:center;text-transform:none;font-weight:400"><input type="radio" name="rk_'+q.key+'" value="yes" '+(a.ans==='yes'?'checked':'')+'> Yes</label>'+
+            '<label style="display:flex;gap:5px;align-items:center;text-transform:none;font-weight:400"><input type="radio" name="rk_'+q.key+'" value="no" '+(a.ans==='no'?'checked':'')+'> No</label>'+
+            '<label style="display:flex;gap:5px;align-items:center;text-transform:none;font-weight:400;color:var(--grey)"><input type="radio" name="rk_'+q.key+'" value="" '+(!a.ans?'checked':'')+'> Not set</label>'+
+            '<input id="rknote_'+q.key+'" placeholder="Notes / details" value="'+esc(a.note||'')+'" style="flex:1;min-width:200px">'+
+          '</div></div>';
+      }
+    });
+  });
+  h+='<div class="field full" style="margin-top:12px"><label for="rk_notes">Additional notes</label><textarea id="rk_notes" rows="3">'+esc(rk.notes||'')+'</textarea></div>';
+  // review record
+  h+='<div class="subhead" style="margin-top:14px">Review record</div>';
+  (rk.reviews||[]).forEach(function(rv,i){ h+='<div class="grid" style="align-items:end"><div class="field"><label>Date</label><input id="rvd_'+i+'" type="date" value="'+esc(rv.date||'')+'"></div><div class="field"><label>Reviewed by</label><input id="rvb_'+i+'" value="'+esc(rv.by||'')+'"></div><div class="field"><label>Changes made</label><input id="rvc_'+i+'" value="'+esc(rv.changes||'')+'"></div><div class="field"><label>Initials</label><input id="rvi_'+i+'" value="'+esc(rv.initials||'')+'"></div></div>'; });
+  h+='<button class="ghost" style="margin-top:6px" onclick="addRiskReview(\''+cid+'\')">+ Add a review row</button>';
+  h+='<div class="formactions" style="margin-top:16px"><button class="primary" onclick="saveRisk(\''+cid+'\')">Save</button>'+
+     '<button class="ghost" onclick="generate(\'risk\',\''+cid+'\')">Save &amp; print</button>'+
+     '<button class="ghost" onclick="closeForm()">Cancel</button></div></div>';
+  m.innerHTML=h; m.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function collectRisk(cid){ var c=(data.children||[]).find(function(x){return x.id===cid;}); if(!c) return null;
+  var rk=c.risk||{}; rk.date=v('rk_date'); rk.by=v('rk_by'); rk.notes=v('rk_notes'); rk.answers=rk.answers||{};
+  RISK_SECTIONS.forEach(function(sec){ sec.qs.forEach(function(q){
+    if(q.type==='text'){ var t=v('rk_'+q.key); if(t) rk.answers[q.key]={text:t}; else delete rk.answers[q.key]; }
+    else { var sel=document.querySelector('input[name="rk_'+q.key+'"]:checked'); var ans=sel?sel.value:''; var note=v('rknote_'+q.key);
+      if(ans||note) rk.answers[q.key]={ans:ans,note:note}; else delete rk.answers[q.key]; }
+  }); });
+  var reviews=[]; (rk.reviews||[]).forEach(function(rv,i){ var d=v('rvd_'+i),by=v('rvb_'+i),ch=v('rvc_'+i),ini=v('rvi_'+i); if(d||by||ch||ini) reviews.push({date:d,by:by,changes:ch,initials:ini}); });
+  rk.reviews=reviews; c.risk=rk; return c; }
+function addRiskReview(cid){ var c=collectRisk(cid); if(!c) return; c.risk.reviews=c.risk.reviews||[]; c.risk.reviews.push({date:todayISO(),by:'',changes:'',initials:''}); persist(); openRiskForm(cid); }
+function saveRisk(cid){ collectRisk(cid); persist(); markDirty(); flag('Risk assessment saved'); renderMain(); }
 var AV={tab:'now', date:null, adults:4, staff:4, schoolMax:9};
 var HOL={childId:null, view:'enter'};
 function openAvailability(){ if(!AV.date) AV.date=todayISO(); renderAvail(); }
@@ -1061,8 +1267,11 @@ function checkEnquiry(){
   out.innerHTML=verdict+'<table class="htable"><tr><th>Month</th>'+days.map(x=>'<th>'+x.slice(0,3)+'</th>').join('')+'<th>Can start?</th></tr>'+rows+'</table>'+
     '<p style="color:var(--grey);font-size:12px;margin-top:8px">A day shows Yes if adding this child keeps that day within ratio. The child\u2019s own age is projected forward each month. Existing children are included with their start and leave dates.</p>';
 }
-function saveSettings(){ var o={}; FEE_ROWS.forEach(r=>{ o[r.key]=v('s_'+r.key); }); data.settings=o;
+function saveSettings(){ data.settings=data.settings||{};
+  FEE_ROWS.forEach(r=>{ data.settings[r.key]=v('s_'+r.key); });
+  CONTRACT_FIELDS.forEach(r=>{ data.settings[r.key]=v('s_'+r.key); });
   persist(); markDirty(); flag('Fees and terms saved'); closeForm(); }
+function cset(key){ var s=data.settings||{}; var r=CONTRACT_FIELDS.find(x=>x.key===key); return (s[key]!=null&&s[key]!=='')?s[key]:(r?r.def:''); }
 
 /* ---------- record form ---------- */
 function recordList(){ return currentChildId ? data.children.filter(c=>c.id===currentChildId)
@@ -1118,6 +1327,250 @@ function buildRecordDocHTML(){
   const list=recordList();
   if(!list.length) return '<p class="anone">No children to show. Add a child first.</p>';
   return list.map(recordFormHTML).join('');
+}
+
+/* ---------- childcare contract ---------- */
+function contractBasisLabel(c){ return c.basis==='term'?'Term time only':(c.basis==='holidays'?'Holidays only':'All year round'); }
+function contractFunding(c){ if(c.funding && c.funding!=='None / private') return c.funding;
+  if(isSchoolAge(c)) return 'Not applicable (school-age child)';
+  return c.funding||'None'; }
+function daysPerWeek(c){ var d={}; (c.attendance||[]).forEach(function(a){ if(a.day) d[a.day]=1; }); return Object.keys(d).length; }
+// a funded-only place has an entitlement and no paid (non-standard) fee rows ticked
+function isFundedOnly(c){ var funded=c.funding && c.funding!=='None / private'; if(!funded) return false;
+  var paid=(c.fees||[]).some(function(k){ var r=FEE_ROWS.find(function(x){return x.key===k;}); return r && !r.standard && r.key!=='retainer'; });
+  return !paid; }
+// all-year children get 10 days half-fee holiday pro rata to days attended per week
+function halfFeeHolidayDays(c){ var dpw=daysPerWeek(c); if(!dpw) return 0; return Math.round(10*dpw/5); }
+function contractClauses(c){
+  c=c||{};
+  var notice=cset('noticeWeeks'), deposit=cset('depositTerms'), settling=cset('settlingWeeks'),
+      reviewM=cset('reviewMonths'), forced=cset('forcedClosureTerms');
+  var fundedOnly=isFundedOnly(c);
+  var securing = fundedOnly
+    ? 'No deposit is charged for a funded-only place. '+settling+' is a settling-in period, during which either side may end the agreement without notice or notice payment, although all other terms apply.'
+    : deposit+' '+settling+' is a settling-in period, during which either side may end the agreement without notice or notice payment, although all other terms apply.';
+  var hhDays=halfFeeHolidayDays(c);
+  var holidayLines=['The setting is closed on bank holidays. Any other planned closures will be given in advance. '+forced];
+  holidayLines.push('Payment is required for all contracted sessions whether or not your child attends, including absence due to your child’s or your family’s illness or holidays; a place cannot be filled at short notice. (No fee is charged where the absence is due to illness within the provider’s own household.)');
+  if((c.basis||'')==='ayr' && hhDays>0 && !fundedOnly){
+    holidayLines.push('As an all-year-round place, up to '+hhDays+' days of holiday a year may be taken at half the contracted fee ('+'10 days pro rata to the '+daysPerWeek(c)+' day(s) a week attended), subject to a minimum of 7 days’ notice. Any days taken with less than 7 days’ notice, and any beyond the '+hhDays+'-day allowance, are charged at the full rate.');
+  } else if((c.basis||'')==='term') {
+    holidayLines.push('Term-time-only places are charged at the full rate for all contracted sessions, with no retainer allowance.');
+  }
+  return [
+    ['The place and hours', ['Little Puddings is open 7.30am to 5.30pm, Monday to Friday. There are no set sessions; you choose your child’s times within those hours. The minimum booking is two half days; a half day is 6 hours and a full day is more than 6 hours. Additional hours may be added in 30-minute blocks at the rates in the schedule above.',
+      'Please arrive at your contracted start time, not before, as staffing is arranged around it. Drop-off is not available after 8.30am, and collection is not available between 3.00pm and 3.40pm, as we are on the school run at that time.',
+      'There is no pay-as-you-go childcare. The days and times set out above are the contracted hours and are reserved for your child. If either side wishes to vary the contracted days or hours, an agreed change is recorded in writing (the six-monthly review and amendment form may be used for this).']],
+    ['Fees and payment', ['Fees are charged at the rates in the schedule above and are payable monthly. Any funded hours are free of charge; any wrap-around or additional hours are listed separately on your invoice.',
+      'A late payment charge and a late collection charge apply as set out in the schedule, and persistent early drop-off may be charged at the standard hourly rate. These charges apply per occasion and do not accumulate over the month. The provider may suspend care until fees due are paid. (Absence and holidays are covered under Holidays and closures below.)']],
+    ['Securing the place and settling in', [securing]],
+    ['Meals and consumables', ['Breakfast, lunch and a snack are provided at no additional charge; an evening meal is not provided. Non-food consumables such as nappies, wipes and sun cream are provided by parents. Please set out your child’s dietary, medical and cultural requirements, which are recorded above and on the registration pack.']],
+    ['Illness and medication', ['Please tell the provider as soon as possible if your child has been ill within 24 hours before a contracted period, and do not bring a child who is unwell to the setting. Please inform the provider of any medicine prescribed by your child’s doctor; written permission is required before any medicine is administered, and each administration is recorded.']],
+    ['Holidays and closures', holidayLines],
+    ['Collection of your child', ['Your child is released only to the parents or to the emergency contacts named in this contract and the registration pack, unless you tell the provider otherwise in writing. Where sole-care permission has not been given and cannot be covered, parents may be asked to collect their child.']],
+    ['Notice and ending the contract', ['After the settling-in period, either side may end this contract by giving '+notice+'. Fees are payable for the full notice period whether or not your child attends.',
+      'The provider reserves the right to give immediate written notice in circumstances that seriously affect the wellbeing of children or staff, in which case the four weeks’ fees remain payable. The provider may also end the contract in cases of failure to pay, persistent lack of parental cooperation, a child’s behaviour causing ongoing disruption to the wellbeing of others, the provider’s inability to meet a child’s needs, or serious ongoing illness. Concerns are always discussed before this point is reached.',
+      'When a place is given up it is offered to the next family on the waiting list rather than held for a sibling.']],
+    ['Policies, safeguarding and information', ['Little Puddings is registered with Ofsted and has a designated safeguarding lead, with a statutory duty to act on any concern for a child’s welfare or safety, which may be reported to Children’s Social Care, Ofsted or the police. The provider holds public liability insurance.',
+      'The setting’s policies, including '+cset('policiesList')+', form part of this agreement, and parents agree to abide by them and by any amended policies agreed during the contract. The full suite of policies is available on request. Your child’s information is held and shared in line with those documents.',
+      'Please tell us promptly of any change to your child’s details, your contact details, or the permissions you have given.']],
+    ['Reviewing this contract', ['The provider and parent agree to review this contract every '+reviewM+'. The contract remains in force until a new one is agreed or notice is satisfactorily completed.']],
+  ];
+}
+function provName(){ return cset('provName')||'Little Puddings'; }
+function contractParties(){ // assembled from only the details entered
+  var brackets=[cset('provOfsted'), cset('provUrn')&&('URN '+cset('provUrn')), cset('provMobile'), cset('provEmail')].filter(Boolean).join('; ');
+  var txt='This agreement is made between '+provName();
+  if(cset('provAddr')) txt+=' of '+cset('provAddr');
+  if(brackets) txt+=' ('+brackets+')';
+  txt+=', “the provider”, and the parent or carer named below, “the parent”, for the care of the child named below.';
+  if(cset('provInsurer')||cset('provPolicy')) txt+=' Public liability insurance: '+[cset('provInsurer'),cset('provPolicy')&&('policy '+cset('provPolicy')),cset('provPolicyExp')&&('expires '+fmtDate(cset('provPolicyExp')))].filter(Boolean).join(', ')+'.';
+  if(!cset('provName')||!cset('provAddr')||!cset('provOfsted')) txt+=' [Add your provider name, address, Ofsted and insurance details on the Fees & terms screen.]';
+  return txt;
+}
+function contractHTML(c){
+  var s=data.settings||{};
+  var h='<div class="recform">'+
+    '<div class="brand">'+esc(provName())+'</div>'+
+    '<h1 class="ctitle">Childcare Contract</h1>'+
+    '<p class="reviewed">Agreement date: '+esc(fmtDate(todayISO()))+'. Please read, check every detail, and sign.</p>'+
+    '<div class="cparties">'+esc(contractParties())+'</div>';
+  // child + parent block
+  h+='<h3 class="rfsec">The child</h3><div class="rf2">'+rff('Name',fullName(c))+rff('Date of birth',fmtDate(c.dob))+'</div>'+
+     '<div class="rf2">'+rff('Start date',fmtDate(c.start))+rff('Contract type',contractBasisLabel(c))+'</div>'+
+     rff('Dietary, medical and particular needs',healthText(c)||'None recorded');
+  h+='<h3 class="rfsec">The parent or carer</h3>'+recordCarer(c,1)+((c.c2name||c.c2mobile)?('<div style="height:8px"></div>'+recordCarer(c,2)):'');
+  // emergency contacts
+  if(c.ec1name||c.ec2name){ h+='<h3 class="rfsec">Emergency contacts and who may collect</h3><div class="rf2">'+
+     rff('Emergency contact',[c.ec1name,c.ec1rel&&'('+c.ec1rel+')',c.ec1phone].filter(Boolean).join(' '))+
+     rff('Emergency contact',[c.ec2name,c.ec2rel&&'('+c.ec2rel+')',c.ec2phone].filter(Boolean).join(' '))+'</div>'; }
+  // hours
+  h+='<h3 class="rfsec">Contracted days and hours</h3>'+hoursTable(c)+rff('Funding entitlement',contractFunding(c));
+  // fees
+  var feeRowsC=recordFeeTableRows(c); var ownFees=feeRowsC.filter(function(r){return !/Late payment|Late collection/.test(r.label);});
+  h+='<h3 class="rfsec">Fees</h3><table class="htable"><tr><th>Service</th><th>Rate</th></tr>'+
+     feeRowsC.map(r=>'<tr><td>'+esc(r.label)+'</td><td>'+esc(r.rate)+'</td></tr>').join('')+'</table>'+
+     (ownFees.length?'':'<p class="reviewed" style="margin-top:4px;color:var(--burg)">No rate is ticked for this child yet. Tick the rates that apply on the child’s record so they print here.</p>');
+  // terms
+  h+='<h3 class="rfsec">Terms and conditions</h3>';
+  contractClauses(c).forEach(function(cl){ h+='<div class="cclause"><h4>'+esc(cl[0])+'</h4>'+cl[1].map(function(p){return '<p>'+esc(p)+'</p>';}).join('')+'</div>'; });
+  if(cset('provIco')) h+='<p class="reviewed" style="margin-top:6px">ICO registration: '+esc(cset('provIco'))+'.</p>';
+  // signatures
+  h+='<div class="csign">'+
+    '<div class="csignbox"><div style="font-weight:700;color:var(--green);font-family:Georgia,serif">Parent or carer</div>'+
+      '<div class="cl">Signed</div><div class="csignline"></div>'+
+      '<div class="cl">Name</div><div class="csignline"></div>'+
+      '<div class="cl">Date</div><div class="csignline"></div></div>'+
+    '<div class="csignbox"><div style="font-weight:700;color:var(--green);font-family:Georgia,serif">For the provider</div>'+
+      '<div class="cl">Signed</div><div class="csignline"></div>'+
+      '<div class="cl">Name</div><div class="csignline"></div>'+
+      '<div class="cl">Date</div><div class="csignline"></div></div>'+
+    '</div>';
+  h+='<p class="reviewed" style="margin-top:14px">This contract is generated from the details and fees held for your setting. Review it to be sure it reflects your current terms before signing.</p>';
+  return h+'</div>';
+}
+function buildContractDocHTML(){
+  var list=recordList();
+  if(!list.length) return '<p class="anone">No children to show. Add a child first.</p>';
+  return list.map(contractHTML).join('');
+}
+
+/* ---------- six-monthly review and amendment summary ---------- */
+function reviewRows(c){
+  var permSummaryYesNo=PERMISSIONS.filter(function(p){ var g=(c.perms&&c.perms[p.key]||{}).given; return g==='yes'||g==='no'; })
+    .map(function(p){ var g=(c.perms[p.key]||{}).given; return permShort(p.key)+': '+(g==='yes'?'Yes':'No'); }).join(', ');
+  return [
+    ['Contracted days & hours', attendsOf(c)||'None set'],
+    ['Contract type', contractBasisLabel(c)],
+    ['Funding entitlement', c.funding||'None'],
+    ['Fees applying', recordFeeTableRows(c).filter(function(r){return !/Late payment|Late collection/.test(r.label);}).map(function(r){return r.label;}).join('; ')||'See fee schedule'],
+    ['Parent / carer contacts', [c.c1name&&(c.c1name+(c.c1mobile?' '+c.c1mobile:'')), c.c2name&&(c.c2name+(c.c2mobile?' '+c.c2mobile:''))].filter(Boolean).join(' · ')||'—'],
+    ['Home address', c.address||'—'],
+    ['Emergency contacts', [c.ec1name&&(c.ec1name+(c.ec1rel?' ('+c.ec1rel+')':'')+(c.ec1phone?' '+c.ec1phone:'')), c.ec2name&&(c.ec2name+(c.ec2rel?' ('+c.ec2rel+')':'')+(c.ec2phone?' '+c.ec2phone:''))].filter(Boolean).join(' · ')||'—'],
+    ['Doctor / surgery', [c.doctorname,c.doctorphone].filter(Boolean).join(' ')||'—'],
+    ['Allergies, diet, medication', healthText(c)||'None recorded'],
+    ['Permissions', permSummaryYesNo||'None recorded'],
+  ];
+}
+function reviewHTML(c){
+  var h='<div class="recform">'+
+    '<div class="brand">'+esc(provName())+'</div>'+
+    '<h1 class="ctitle">Six-monthly review and amendments</h1>'+
+    '<p class="reviewed">For '+esc(fullName(c))+' (date of birth '+esc(fmtDate(c.dob))+'). Last confirmed: '+(c.lastConfirmed?esc(fmtDate(c.lastConfirmed)):'____________')+'. Review date: '+esc(fmtDate(todayISO()))+'.</p>'+
+    '<p style="font-size:13px;color:var(--grey);margin:4px 0 10px">Please check each detail below. Tick <b>Correct</b> if it is still right, or write the new detail under <b>Amendment</b>. Any change to days or hours is a variation to your contract and is agreed by signing at the foot.</p>'+
+    '<table class="htable"><thead><tr><th style="width:26%">Detail</th><th style="width:40%">Currently on record</th><th style="width:10%">Correct</th><th>Amendment</th></tr></thead><tbody>'+
+    reviewRows(c).map(function(r){ return '<tr><td style="font-weight:700">'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td style="text-align:center;font-size:18px">☐</td><td></td></tr>'; }).join('')+
+    '</tbody></table>'+
+    '<div class="csign">'+
+      '<div class="csignbox"><div style="font-weight:700;color:var(--green);font-family:Georgia,serif">Parent or carer</div>'+
+        '<p style="font-size:12px;color:var(--grey);margin:6px 0">I confirm I have reviewed the above and that it is correct, or that the amendments I have written are agreed.</p>'+
+        '<div class="cl">Signed</div><div class="csignline"></div><div class="cl">Name</div><div class="csignline"></div><div class="cl">Date</div><div class="csignline"></div></div>'+
+      '<div class="csignbox"><div style="font-weight:700;color:var(--green);font-family:Georgia,serif">For the provider</div>'+
+        '<p style="font-size:12px;color:var(--grey);margin:6px 0">Amendments entered on the setting record on behalf of Little Puddings.</p>'+
+        '<div class="cl">Signed</div><div class="csignline"></div><div class="cl">Name</div><div class="csignline"></div><div class="cl">Date</div><div class="csignline"></div></div>'+
+    '</div>';
+  return h+'</div>';
+}
+function buildReviewDocHTML(){
+  var list=recordList();
+  if(!list.length) return '<p class="anone">No children to show. Add a child first.</p>';
+  return list.map(reviewHTML).join('');
+}
+
+/* ---------- risk assessment printable ---------- */
+function riskHTML(c){
+  var rk=c.risk||{};
+  var h='<div class="recform">'+
+    '<div class="brand">'+esc(provName())+'</div>'+
+    '<h1 class="ctitle">Individual Child Risk Assessment</h1>'+
+    '<div class="docsub">Practical day-to-day reference, EYFS Statutory Framework</div>'+
+    '<p class="reviewed">'+esc(fullName(c))+' &nbsp;·&nbsp; DOB '+esc(fmtDate(c.dob))+' &nbsp;·&nbsp; Assessed '+(rk.date?esc(fmtDate(rk.date)):'____________')+(rk.by?' by '+esc(rk.by):'')+'</p>'+
+    '<p style="font-size:12px;color:var(--grey)">This assessment records the practical day-to-day information needed to keep each child safe within the setting and on outings. Review at registration, at the 6-week check-in, at least annually, and whenever the child’s needs change.</p>';
+  RISK_SECTIONS.forEach(function(sec){
+    h+='<h3 class="rfsec">'+esc(sec.name)+'</h3>';
+    var txtQs=sec.qs.filter(function(q){return q.type==='text';});
+    var ynQs=sec.qs.filter(function(q){return q.type!=='text';});
+    if(ynQs.length){ h+='<table class="htable"><thead><tr><th>Question</th><th style="width:60px;text-align:center">Yes</th><th style="width:60px;text-align:center">No</th><th style="width:38%">Notes / details</th></tr></thead><tbody>'+
+      ynQs.map(function(q){ var a=riskAns(c,q.key); return '<tr><td>'+esc(q.q)+'</td><td style="text-align:center">'+(a.ans==='yes'?'✓':'')+'</td><td style="text-align:center">'+(a.ans==='no'?'✓':'')+'</td><td>'+esc(a.note||'')+'</td></tr>'; }).join('')+'</tbody></table>'; }
+    txtQs.forEach(function(q){ var a=riskAns(c,q.key); h+='<div class="rf2" style="grid-template-columns:1fr"><div class="rff"><span class="rfl">'+esc(q.q)+'</span><span class="rfv'+(a.text?'':' empty')+'">'+(a.text?esc(a.text):'&nbsp;')+'</span></div></div>'; });
+  });
+  if(rk.notes) h+='<h3 class="rfsec">Additional notes</h3><p style="font-size:13.5px">'+esc(rk.notes)+'</p>';
+  h+='<h3 class="rfsec">Review record</h3><table class="htable"><thead><tr><th>Date</th><th>Reviewed by</th><th>Changes made</th><th style="width:120px">Initials</th></tr></thead><tbody>'+
+    ((rk.reviews&&rk.reviews.length?rk.reviews:[{},{},{}]).map(function(rv){ return '<tr><td>'+(rv.date?esc(fmtDate(rv.date)):'')+'</td><td>'+esc(rv.by||'')+'</td><td>'+esc(rv.changes||'')+'</td><td>'+esc(rv.initials||'')+'</td></tr>'; }).join(''))+'</tbody></table>';
+  h+='<div class="csign" style="margin-top:16px"><div class="csignbox"><div style="font-weight:700;color:var(--green);font-family:Georgia,serif">Assessed by</div><div class="cl">Signed</div><div class="csignline"></div><div class="cl">Date</div><div class="csignline"></div></div>'+
+    '<div class="csignbox"><div style="font-weight:700;color:var(--green);font-family:Georgia,serif">Shared with parent</div><div class="cl">Signed</div><div class="csignline"></div><div class="cl">Date</div><div class="csignline"></div></div></div>';
+  return h+'</div>';
+}
+function buildRiskDocHTML(){ var list=recordList(); if(!list.length) return '<p class="anone">No children to show. Add a child first.</p>';
+  return list.map(riskHTML).join(''); }
+function buildRiskWordHTML(){ var list=recordList(); if(!list.length) return '<p style="font-family:Arial;color:#6B6460">No children to show.</p>';
+  var th='font-family:Arial;font-size:9pt;font-weight:bold;background:#E8F1EC;color:#1A7A4A;border:1pt solid #cccccc;padding:4px 6px;text-align:left';
+  var td='font-family:Arial;font-size:9.5pt;border:1pt solid #cccccc;padding:4px 6px;vertical-align:top';
+  var sec=function(t){ return '<div style="font-family:Georgia,serif;color:#1A7A4A;font-size:12pt;font-weight:bold;border-bottom:1pt solid #D4A017;padding-bottom:3px;margin:12px 0 5px">'+esc(t)+'</div>'; };
+  return list.map(function(c,idx){ var rk=c.risk||{};
+    var h=(idx>0?'<br style="page-break-before:always"/>':'')+
+      '<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:11pt">'+esc(provName())+'</div>'+
+      '<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:20pt;margin:2px 0">Individual Child Risk Assessment</div>'+
+      '<div style="font-family:Arial;font-size:9pt;color:#6B6460;border-bottom:2pt solid #D4A017;padding-bottom:6px">'+esc(fullName(c))+' &#183; DOB '+esc(fmtDate(c.dob))+' &#183; Assessed '+(rk.date?esc(fmtDate(rk.date)):'____________')+(rk.by?' by '+esc(rk.by):'')+'</div>';
+    RISK_SECTIONS.forEach(function(s){ h+=sec(s.name);
+      var yn=s.qs.filter(function(q){return q.type!=='text';}), tx=s.qs.filter(function(q){return q.type==='text';});
+      if(yn.length){ h+='<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse"><tr><td style="'+th+'">Question</td><td style="'+th+'" width="45">Yes</td><td style="'+th+'" width="45">No</td><td style="'+th+'" width="35%">Notes / details</td></tr>'+
+        yn.map(function(q){ var a=riskAns(c,q.key); return '<tr><td style="'+td+'">'+esc(q.q)+'</td><td style="'+td+';text-align:center">'+(a.ans==='yes'?'&#10003;':'')+'</td><td style="'+td+';text-align:center">'+(a.ans==='no'?'&#10003;':'')+'</td><td style="'+td+'">'+esc(a.note||'')+'</td></tr>'; }).join('')+'</table>'; }
+      tx.forEach(function(q){ var a=riskAns(c,q.key); h+='<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-top:3px"><tr><td style="'+td+';font-weight:bold" width="40%">'+esc(q.q)+'</td><td style="'+td+'">'+esc(a.text||'')+'</td></tr></table>'; });
+    });
+    if(rk.notes) h+=sec('Additional notes')+'<div style="font-family:Arial;font-size:9.5pt;line-height:1.5">'+esc(rk.notes)+'</div>';
+    h+=sec('Review record')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse"><tr><td style="'+th+'">Date</td><td style="'+th+'">Reviewed by</td><td style="'+th+'">Changes made</td><td style="'+th+'" width="90">Initials</td></tr>'+
+      ((rk.reviews&&rk.reviews.length?rk.reviews:[{},{},{}]).map(function(rv){ return '<tr><td style="'+td+'">'+(rv.date?esc(fmtDate(rv.date)):'')+'</td><td style="'+td+'">'+esc(rv.by||'')+'</td><td style="'+td+'">'+esc(rv.changes||'')+'</td><td style="'+td+'">'+esc(rv.initials||'')+'</td></tr>'; }).join(''))+'</table>';
+    return h;
+  }).join('');
+}
+function buildReviewWordHTML(){
+  var list=recordList(); if(!list.length) return '<p style="font-family:Arial;color:#6B6460">No children to show.</p>';
+  var th='font-family:Arial;font-size:9pt;font-weight:bold;background:#E8F1EC;color:#1A7A4A;border:1pt solid #cccccc;padding:4px 6px;text-align:left';
+  var td='font-family:Arial;font-size:9.5pt;border:1pt solid #cccccc;padding:5px 6px;vertical-align:top';
+  var sb='font-family:Arial;font-size:9pt;color:#6B6460;padding:8px 0 2px';
+  return list.map(function(c,idx){
+    var h=(idx>0?'<br style="page-break-before:always"/>':'')+
+      '<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:11pt">'+esc(provName())+'</div>'+
+      '<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:20pt;margin:2px 0">Six-monthly review and amendments</div>'+
+      '<div style="font-family:Arial;font-size:9pt;color:#6B6460;border-bottom:2pt solid #D4A017;padding-bottom:6px">For '+esc(fullName(c))+' (DOB '+esc(fmtDate(c.dob))+'). Review date: '+esc(fmtDate(todayISO()))+'.</div>'+
+      '<div style="font-family:Arial;font-size:9.5pt;color:#444;margin:8px 0">Tick Correct if a detail is still right, or write the new detail under Amendment. Any change to days or hours is a variation to your contract, agreed by signing below.</div>'+
+      '<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse"><tr><td style="'+th+'" width="26%">Detail</td><td style="'+th+'" width="40%">Currently on record</td><td style="'+th+'" width="10%">Correct</td><td style="'+th+'">Amendment</td></tr>'+
+      reviewRows(c).map(function(r){ return '<tr><td style="'+td+';font-weight:bold">'+esc(r[0])+'</td><td style="'+td+'">'+esc(r[1])+'</td><td style="'+td+';text-align:center">&#9744;</td><td style="'+td+'"></td></tr>'; }).join('')+'</table>'+
+      '<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-top:10px"><tr>'+
+      '<td width="50%" valign="top" style="padding-right:12px"><div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold">Parent or carer</div><div style="'+sb+'">Signed</div><div style="border-bottom:0.5pt solid #999;height:20px"></div><div style="'+sb+'">Name</div><div style="border-bottom:0.5pt solid #999;height:20px"></div><div style="'+sb+'">Date</div><div style="border-bottom:0.5pt solid #999;height:20px"></div></td>'+
+      '<td width="50%" valign="top" style="padding-left:12px"><div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold">For the provider</div><div style="'+sb+'">Signed</div><div style="border-bottom:0.5pt solid #999;height:20px"></div><div style="'+sb+'">Name</div><div style="border-bottom:0.5pt solid #999;height:20px"></div><div style="'+sb+'">Date</div><div style="border-bottom:0.5pt solid #999;height:20px"></div></td>'+
+      '</tr></table>';
+    return h;
+  }).join('');
+}
+function buildContractWordHTML(){
+  var list=recordList(); if(!list.length) return '<p style="font-family:Arial;color:#6B6460">No children to show.</p>';
+  var wsec=function(t){ return '<div style="font-family:Georgia,serif;color:#1A7A4A;font-size:13pt;font-weight:bold;border-bottom:1pt solid #D4A017;padding-bottom:3px;margin:14px 0 6px">'+esc(t)+'</div>'; };
+  return list.map(function(c,idx){
+    var h=(idx>0?'<br style="page-break-before:always"/>':'')+
+      '<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:11pt">'+esc(provName())+'</div>'+
+      '<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:22pt;margin:2px 0">Childcare Contract</div>'+
+      '<div style="font-family:Arial;font-size:9pt;color:#6B6460;border-bottom:2pt solid #D4A017;padding-bottom:6px">Agreement date: '+esc(fmtDate(todayISO()))+'. Please read, check every detail, and sign.</div>'+
+      '<div style="font-family:Arial;font-size:10pt;line-height:1.5;margin:10px 0">'+esc(contractParties())+'</div>';
+    var td='font-family:Arial;font-size:10pt;border:1pt solid #cccccc;padding:4px 8px';
+    h+=wsec('The child')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+wrf2('Name',fullName(c),'Date of birth',fmtDate(c.dob))+wrf2('Start date',fmtDate(c.start),'Contract type',contractBasisLabel(c))+wrfFull('Dietary, medical and particular needs',healthText(c)||'None recorded')+'</table>';
+    h+=wsec('The parent or carer')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+wordCarerRows(c,1)+'</table>';
+    if(c.ec1name||c.ec2name){ h+=wsec('Emergency contacts and who may collect')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+
+      wrf2('Emergency contact',[c.ec1name,c.ec1rel&&'('+c.ec1rel+')',c.ec1phone].filter(Boolean).join(' '),'Emergency contact',[c.ec2name,c.ec2rel&&'('+c.ec2rel+')',c.ec2phone].filter(Boolean).join(' '))+'</table>'; }
+    h+=wsec('Contracted days and hours')+wordHoursTable(c)+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-top:4px">'+wrfFull('Funding entitlement',contractFunding(c))+'</table>';
+    var feeTh='font-family:Arial;font-size:9pt;font-weight:bold;background:#E8F1EC;color:#1A7A4A;border:1pt solid #cccccc;padding:4px 8px;text-align:left';
+    h+=wsec('Fees')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse"><tr><td style="'+feeTh+'" width="55%">Service</td><td style="'+feeTh+'">Rate</td></tr>'+
+      recordFeeTableRows(c).map(r=>'<tr><td style="'+td+'">'+esc(r.label)+'</td><td style="'+td+'">'+esc(r.rate)+'</td></tr>').join('')+'</table>';
+    h+=wsec('Terms and conditions');
+    contractClauses(c).forEach(function(cl){ h+='<div style="font-family:Georgia,serif;color:#1A7A4A;font-size:11pt;font-weight:bold;margin:10px 0 2px">'+esc(cl[0])+'</div>'+cl[1].map(function(p){return '<div style="font-family:Arial;font-size:9.5pt;line-height:1.5;margin:3px 0">'+esc(p)+'</div>';}).join(''); });
+    var sb='font-family:Arial;font-size:9pt;color:#6B6460;padding:10px 0 2px';
+    h+=wsec('Signatures')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-top:6px"><tr>'+
+      '<td width="50%" valign="top" style="padding-right:12px"><div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold">Parent or carer</div><div style="'+sb+'">Signed</div><div style="border-bottom:0.5pt solid #999;height:20px"></div><div style="'+sb+'">Name</div><div style="border-bottom:0.5pt solid #999;height:20px"></div><div style="'+sb+'">Date</div><div style="border-bottom:0.5pt solid #999;height:20px"></div></td>'+
+      '<td width="50%" valign="top" style="padding-left:12px"><div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold">For the provider</div><div style="'+sb+'">Signed</div><div style="border-bottom:0.5pt solid #999;height:20px"></div><div style="'+sb+'">Name</div><div style="border-bottom:0.5pt solid #999;height:20px"></div><div style="'+sb+'">Date</div><div style="border-bottom:0.5pt solid #999;height:20px"></div></td>'+
+      '</tr></table>';
+    return h;
+  }).join('');
 }
 
 /* record form, Word */
@@ -1360,7 +1813,28 @@ function childHTML(c){
   if(c.school) h+='<div class="row"><span class="lbl">School:</span><span>'+esc(c.school)+'</span><span class="ph">'+esc(c.schoolphone||'')+'</span></div>';
   const banner=allergyBanner(c);
   if(banner) h+='<div class="alert">'+esc(banner.toUpperCase())+'</div>';
+  var ps=permSummary(c);
+  if(ps) h+='<div class="permline"><span class="lbl">Permissions:</span><span>'+ps+'</span></div>';
+  var rf=riskFlags(c);
+  if(rf.length) h+='<div class="permline"><span class="lbl" style="color:var(--burg)">Safety:</span><span>'+rf.map(function(f){return esc(f.label)+(f.detail?' ('+esc(f.detail)+')':'');}).join('; ')+'</span></div>';
   h+='</div>'; return h;
+}
+// deputy-relevant permissions: photos, library, toothbrushing, sole care. Yes in green, No in burgundy.
+var DEPUTY_PERMS=['photo_routine','photo_tapestry','photo_display','photo_coursework','photo_share_tapestry','photo_share_whatsapp','library','toothbrushing','solecare'];
+function permShort(key){ return ({photo_routine:'Photos (routine)',photo_tapestry:'Photos (Tapestry)',photo_display:'Photos (display)',photo_coursework:'Photos (coursework)',photo_share_tapestry:'Share via Tapestry',photo_share_whatsapp:'Share via WhatsApp',library:'Library',toothbrushing:'Toothbrushing',solecare:'Sole care'})[key]||permLabel(key); }
+function permSummary(c){ if(!c.perms) return '';
+  var yes=[],no=[];
+  DEPUTY_PERMS.forEach(function(k){ var g=(c.perms[k]||{}).given; if(g==='yes') yes.push(permShort(k)); else if(g==='no') no.push(permShort(k)); });
+  var parts=[];
+  if(yes.length) parts.push('<span style="color:#1A7A4A">Yes: '+esc(yes.join(', '))+'</span>');
+  if(no.length) parts.push('<span style="color:#A13A2A;font-weight:700">No: '+esc(no.join(', '))+'</span>');
+  return parts.join(' &nbsp;·&nbsp; ');
+}
+function permSummaryPlain(c){ if(!c.perms) return '';
+  var yes=[],no=[];
+  DEPUTY_PERMS.forEach(function(k){ var g=(c.perms[k]||{}).given; if(g==='yes') yes.push(permShort(k)); else if(g==='no') no.push(permShort(k)); });
+  var parts=[]; if(yes.length) parts.push('Yes: '+yes.join(', ')); if(no.length) parts.push('No: '+no.join(', '));
+  return parts.join('  ·  ');
 }
 function staffHTML(s){
   let h='<div class="staffblock">';
@@ -1407,6 +1881,9 @@ function renderDoc(){ document.getElementById('document').innerHTML =
   currentDoc==='checklist' ? buildChecklistDocHTML() :
   currentDoc==='firebag' ? buildFireBagDocHTML() :
   currentDoc==='schedule' ? buildScheduleDocHTML() :
+  currentDoc==='contract' ? buildContractDocHTML() :
+  currentDoc==='review' ? buildReviewDocHTML() :
+  currentDoc==='risk' ? buildRiskDocHTML() :
   currentDoc==='record' ? buildRecordDocHTML() : buildDocHTML(); }
 
 function allergyChildren(){
@@ -1422,13 +1899,18 @@ function buildAllergyDocHTML(){
         '<p class="reviewed">Reviewed: '+(rev?esc(fmtDate(rev)):'____________')+' &nbsp;\u00b7&nbsp; Confidential</p>';
   if(!list.length){ h+='<p class="anone">No allergies or dietary requirements recorded yet.</p>'; }
   else{
-    h+='<table class="atable"><thead><tr><th style="width:26%">Child</th><th style="width:28%">Allergies</th><th style="width:28%">Dietary requirements</th><th>Other medical</th></tr></thead><tbody>'+
-      list.map(c=>'<tr><td class="an">'+esc(fullName(c))+'</td>'+
-        '<td>'+(c.allergies?esc(c.allergies):'<span class="anone">None recorded</span>')+'</td>'+
-        '<td>'+(c.dietary?esc(c.dietary):'<span class="anone">None recorded</span>')+'</td>'+
-        '<td>'+(c.alert?esc(c.alert):'')+'</td></tr>').join('')+
-      '</tbody></table>'+
-      '<p class="reviewed" style="margin-top:14px">This sheet lists only children with a recorded allergy, dietary requirement or medical note. Always check a child\u2019s full record if unsure.</p>';
+    h+='<div class="akgrid">'+list.map(function(c){
+      var hasAll=!!c.allergies;
+      var card='<div class="akcard'+(hasAll?' hasallergy':'')+'">'+
+        '<div class="akname">'+esc(fullName(c))+'<span class="akage">'+esc(ageShort(c))+'</span></div>';
+      if(hasAll) card+='<div class="akallergy">ALLERGY: '+esc(c.allergies.toUpperCase())+'</div>';
+      else card+='<div class="aknoallergy">No allergy recorded</div>';
+      if(c.dietary) card+='<div class="akline"><b>Diet:</b> '+esc(c.dietary)+'</div>';
+      if(c.medication) card+='<div class="akmed">Medication: '+esc(c.medication)+'</div>';
+      if(c.alert) card+='<div class="akline"><b>Medical:</b> '+esc(c.alert)+'</div>';
+      return card+'</div>';
+    }).join('')+'</div>'+
+      '<p class="reviewed" style="margin-top:16px">Pin this up in the kitchen. It lists only children with a recorded allergy, dietary need, medication or medical note, and updates whenever you change a record, so reprint it after any change. Always check a child\u2019s full record if unsure.</p>';
   }
   h+='<div class="docfoot"><span>Little Puddings, Lincoln LN6 0UL</span><span>Confidential, contains personal data</span></div>';
   return h;
@@ -1444,11 +1926,11 @@ function buildAllergyWordHTML(){
     const th='font-family:Arial;font-size:10pt;font-weight:bold;color:#A13A2A;background:#F4DEDA;border:1pt solid #E4C8C2;padding:5px 8px;text-align:left';
     const td='font-family:Arial;font-size:10pt;border:1pt solid #cccccc;padding:5px 8px;vertical-align:top';
     h+='<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+
-      '<tr><td width="26%" style="'+th+'">Child</td><td width="28%" style="'+th+'">Allergies</td><td width="28%" style="'+th+'">Dietary requirements</td><td style="'+th+'">Other medical</td></tr>'+
+      '<tr><td width="22%" style="'+th+'">Child</td><td width="26%" style="'+th+'">Allergies</td><td width="22%" style="'+th+'">Dietary</td><td width="30%" style="'+th+'">Medication / medical</td></tr>'+
       list.map(c=>'<tr><td style="'+td+';font-weight:bold">'+esc(fullName(c))+'</td>'+
-        '<td style="'+td+'">'+esc(c.allergies||'')+'</td>'+
+        '<td style="'+td+';font-weight:bold;color:#A13A2A">'+esc(c.allergies||'')+'</td>'+
         '<td style="'+td+'">'+esc(c.dietary||'')+'</td>'+
-        '<td style="'+td+'">'+esc(c.alert||'')+'</td></tr>').join('')+
+        '<td style="'+td+'">'+esc([c.medication&&('Meds: '+c.medication),c.alert].filter(Boolean).join('; '))+'</td></tr>').join('')+
       '</table>';
   }
   h+='<div style="font-family:Arial;font-size:8.5pt;color:#6B6460;border-top:1pt solid #cccccc;margin-top:18px;padding-top:6px">Little Puddings, Lincoln LN6 0UL &#160;&#183;&#160; Confidential, contains personal data</div>';
@@ -1588,9 +2070,13 @@ function wChild(c){
   if(c.school) h+=wRow('School:',c.school,c.schoolphone);
   h+='</table>';
   const banner=allergyBanner(c);
-  if(banner) h+='<table width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 10px 0"><tr>'+
+  if(banner) h+='<table width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 4px 0"><tr>'+
     '<td bgcolor="#F4DEDA" align="center" style="background:#F4DEDA;font-family:Arial;font-size:9.5pt;font-weight:bold;color:#A13A2A;padding:4px">'+esc(banner.toUpperCase())+'</td></tr></table>';
-  else h+='<div style="font-size:6pt">&#160;</div>';
+  var ps=permSummaryPlain(c);
+  if(ps) h+='<table width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 3px 0"><tr><td style="font-family:Arial;font-size:8.5pt;color:#6B6460;padding:2px 4px"><b>Permissions:</b> '+esc(ps)+'</td></tr></table>';
+  var rf=riskFlags(c);
+  if(rf.length) h+='<table width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 10px 0"><tr><td style="font-family:Arial;font-size:8.5pt;color:#A13A2A;padding:2px 4px"><b>Safety:</b> '+esc(rf.map(function(f){return f.label+(f.detail?' ('+f.detail+')':'');}).join('; '))+'</td></tr></table>';
+  else if(!ps) h+='<div style="font-size:6pt">&#160;</div>';
   return h;
 }
 function wStaff(s){
@@ -1622,6 +2108,15 @@ function downloadWord(){
   else if(currentDoc==='trip'){ inner=buildTripWordHTML(); title='Trip Outing Register'; }
   else if(currentDoc==='checklist'){ inner=buildChecklistWordHTML(); title=(data.checklist.title.trim()||'Children checklist'); }
   else if(currentDoc==='schedule'){ inner=buildScheduleWordHTML(); title='Weekly schedule'; }
+  else if(currentDoc==='contract'){ inner=buildContractWordHTML();
+    const c=currentChildId?data.children.find(x=>x.id===currentChildId):null;
+    title = c ? ('Childcare Contract, '+fullName(c)) : 'Childcare Contracts'; }
+  else if(currentDoc==='review'){ inner=buildReviewWordHTML();
+    const c=currentChildId?data.children.find(x=>x.id===currentChildId):null;
+    title = c ? ('Review and amendments, '+fullName(c)) : 'Review and amendment forms'; }
+  else if(currentDoc==='risk'){ inner=buildRiskWordHTML();
+    const c=currentChildId?data.children.find(x=>x.id===currentChildId):null;
+    title = c ? ('Risk assessment, '+fullName(c)) : 'Risk assessments'; }
   else if(currentDoc==='record'){ inner=buildRecordWordHTML();
     const c=currentChildId?data.children.find(x=>x.id===currentChildId):null;
     title = c ? ('Child Record Form, '+fullName(c)) : 'Child Record Forms'; }
@@ -1935,7 +2430,7 @@ function updatePreviewBar(){
   var wb=document.getElementById('wordBtn'), rw=document.getElementById('reviewedWrap');
   var isFire = currentDoc==='firebag';
   if(wb) wb.style.display = isFire ? 'none' : '';
-  if(rw) rw.style.display = (isFire||currentDoc==='schedule') ? 'none' : 'flex';
+  if(rw) rw.style.display = (isFire||currentDoc==='schedule'||currentDoc==='contract'||currentDoc==='review'||currentDoc==='risk') ? 'none' : 'flex';
 }
 function openPins(){ ensureModel(); var m=document.getElementById('formMount');
   m.innerHTML='<div class="formcard"><h2>PINs</h2>'+
