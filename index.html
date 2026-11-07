@@ -154,6 +154,12 @@
   .bandhead{font-family:Georgia,serif;font-weight:700;font-size:18px;color:#fff;
     padding:5px 12px;border-radius:4px;margin:22px 0 12px}
   .child{border-left:4px solid var(--line);padding:4px 0 4px 14px;margin:0 0 16px}
+  .bandhead.ol{background:#fff;border:2px solid currentColor}
+  .holdiv{font-family:Georgia,serif;font-weight:700;font-size:15px;color:#fff;background:#6C4A8F;
+    padding:7px 12px;border-radius:4px;margin:28px 0 10px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .bandkey{display:flex;flex-wrap:wrap;gap:12px;margin:8px 0 16px;font-size:12px;color:var(--ink)}
+  .bandkey span{display:inline-flex;align-items:center;gap:6px}
+  .bandkey i{width:13px;height:13px;border-radius:3px;display:inline-block;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .nameline{display:flex;justify-content:space-between;align-items:baseline;gap:16px}
   .cname{font-weight:700;font-size:15px;letter-spacing:.02em}
   .dob{color:var(--grey);font-size:13px;font-style:italic;white-space:nowrap}
@@ -324,6 +330,13 @@
       <button class="primary" onclick="window.print()">Print / Save as PDF</button>
     </div>
   </div>
+  <div id="deputyTabs" class="no-print" style="display:none;background:var(--bg);border-bottom:1px solid var(--line)">
+    <div class="wrap" style="display:flex;gap:8px;padding:8px 0;flex-wrap:wrap">
+      <button class="primary" id="depTab_emergency" onclick="deputyTab('emergency')">Emergency contacts</button>
+      <button class="ghost" id="depTab_perms" onclick="deputyTab('perms')">Permissions</button>
+      <button class="ghost" id="depTab_medical" onclick="deputyTab('medical')">Medical &amp; allergies</button>
+    </div>
+  </div>
   <div class="wrap">
     <div id="document" class="doc"></div>
   </div>
@@ -331,7 +344,7 @@
 
 <script>
 /* ---------- build stamp (bump this whenever you upload a new version) ---------- */
-var BUILD='2026-11-07h';
+var BUILD='2026-11-07k';
 /* ---------- band configuration (edit colours here if you like) ---------- */
 const BANDS = [
   { name:'Under 1s', color:'#C0392B' },
@@ -634,6 +647,13 @@ function childForm(c,editing){
      fld('f_ec2rel','Relationship',c.ec2rel,'text','e.g. Grandparent, friend')+
      fld('f_ec2phone','Contact number',c.ec2phone,'tel')+
      '<div class="field"></div>'+
+     '<div class="subhead">Collection and parental responsibility</div>'+
+     '<div class="field full"><label for="f_broughtby">Usually brought and collected by</label><input id="f_broughtby" value="'+esc(c.broughtby||'')+'" placeholder="e.g. Mum most days, Dad on Fridays"></div>'+
+     '<div class="field full"><label for="f_authcollect">Others authorised to collect (names and relationship)</label><textarea id="f_authcollect" placeholder="Only people the parent has named may collect, one per line">'+esc(c.authcollect||'')+'</textarea></div>'+
+     fld('f_collectpw','Collection password',c.collectpw,'text','agreed word to confirm an authorised collector')+
+     '<div class="field"></div>'+
+     '<div class="field full"><label for="f_parentalresp">Parental responsibility held by</label><input id="f_parentalresp" value="'+esc(c.parentalresp||'')+'" placeholder="e.g. both parents; or name(s)"></div>'+
+     '<div class="field full"><label for="f_courtorders">Court orders or restrictions on contact</label><textarea id="f_courtorders" placeholder="Any order or restriction affecting who may collect or have contact; leave blank if none">'+esc(c.courtorders||'')+'</textarea></div>'+
      '<div class="subhead">Attendance</div>'+
      '<div class="field full"><span class="agehint">Tick each day and set the times. Use the second pair of times only for children who come in two blocks, such as before and after school (for example 7.30 to 8.55, then 15.25 to 17.00). Leave it blank for full-day children.</span></div>'+
      '<div class="days"><div class="dayrow hdr"><span>Day</span><span>From</span><span>To</span><span>Then from</span><span>To</span></div>'+
@@ -678,7 +698,7 @@ function childForm(c,editing){
        PERMISSIONS.map(function(p){ var pv=(c.perms&&c.perms[p.key])||{};
          return '<div style="display:grid;grid-template-columns:1fr 84px 150px;gap:10px;align-items:center;padding:4px 0;border-bottom:1px dashed var(--line)">'+
            '<span style="font-size:13px;color:var(--ink)">'+esc(p.label)+'</span>'+
-           '<select id="perm_'+p.key+'">'+['','yes','no'].map(function(o){var L={'':'–','yes':'Yes','no':'No'}[o]; return '<option value="'+o+'"'+((pv.given||'')===o?' selected':'')+'>'+L+'</option>';}).join('')+'</select>'+
+           '<select id="perm_'+p.key+'">'+['','yes','no','na'].map(function(o){var L={'':'–','yes':'Yes','no':'No','na':'N/A'}[o]; return '<option value="'+o+'"'+((pv.given||'')===o?' selected':'')+'>'+L+'</option>';}).join('')+'</select>'+
            '<input type="date" id="permd_'+p.key+'" value="'+esc(pv.date||'')+'">'+
          '</div>'; }).join('')+'</div></div>'+
    '</div>'+
@@ -732,6 +752,7 @@ function saveChild(){
     homephone:v('f_homephone'),
     doctorname:v('f_doctorname'), doctorphone:v('f_doctorphone'),
     ec1name:v('f_ec1name'), ec1rel:v('f_ec1rel'), ec1phone:v('f_ec1phone'), ec2name:v('f_ec2name'), ec2rel:v('f_ec2rel'), ec2phone:v('f_ec2phone'),
+    broughtby:v('f_broughtby'), authcollect:v('f_authcollect'), collectpw:v('f_collectpw'), parentalresp:v('f_parentalresp'), courtorders:v('f_courtorders'),
     c1label:v('f_c1label'), c1name:v('f_c1name'), c1mobile:v('f_c1mobile'), c1work:v('f_c1work'), c1workphone:v('f_c1workphone'), c1email:v('f_c1email'),
     c2label:v('f_c2label'), c2name:v('f_c2name'), c2mobile:v('f_c2mobile'), c2work:v('f_c2work'), c2workphone:v('f_c2workphone'), c2email:v('f_c2email'),
     attendance: DAYS.filter(d=>{const e=document.getElementById('f_on_'+d.slice(0,3));return e&&e.checked;})
@@ -1043,7 +1064,7 @@ var PERMVIEW={key:'photo_share_whatsapp'};
 function openPermissions(){ var m=document.getElementById('formMount');
   var key=PERMVIEW.key; var kids=(data.children||[]).filter(function(c){return onRoll(c);}).sort(function(a,b){return fullName(a).localeCompare(fullName(b));});
   function val(c){ var pv=(c.perms&&c.perms[key])||{}; return pv.given||''; }
-  var yes=kids.filter(function(c){return val(c)==='yes';}), no=kids.filter(function(c){return val(c)==='no';}), none=kids.filter(function(c){return !val(c);});
+  var yes=kids.filter(function(c){return val(c)==='yes';}), no=kids.filter(function(c){return val(c)==='no';}), na=kids.filter(function(c){return val(c)==='na';}), none=kids.filter(function(c){return !val(c);});
   function list(arr,colour){ if(!arr.length) return '<span class="anone">none</span>';
     return arr.map(function(c){ var pv=(c.perms&&c.perms[key])||{}; return '<span style="display:inline-block;border:1px solid '+colour+';border-radius:20px;padding:2px 10px;margin:3px 4px 0 0;font-size:13px">'+esc(fullName(c))+(pv.date?' <span style="color:var(--grey);font-size:11px">'+esc(fmtDate(pv.date))+'</span>':'')+'</span>'; }).join(''); }
   var opts=PERMISSIONS.map(function(p){ return '<option value="'+p.key+'"'+(p.key===key?' selected':'')+'>'+esc(p.label)+'</option>'; }).join('');
@@ -1052,6 +1073,7 @@ function openPermissions(){ var m=document.getElementById('formMount');
     '<div class="field" style="max-width:420px"><label for="pm_sel">Permission</label><select id="pm_sel" onchange="PERMVIEW.key=this.value;openPermissions()">'+opts+'</select></div>'+
     '<div style="margin-top:12px"><div class="subhead">Yes <span style="color:var(--grey);font-weight:400;font-size:12px">('+yes.length+')</span></div><div>'+list(yes,'#1A7A4A')+'</div></div>'+
     '<div style="margin-top:10px"><div class="subhead">No <span style="color:var(--grey);font-weight:400;font-size:12px">('+no.length+')</span></div><div>'+list(no,'#A13A2A')+'</div></div>'+
+    '<div style="margin-top:10px"><div class="subhead">Not applicable <span style="color:var(--grey);font-weight:400;font-size:12px">('+na.length+')</span></div><div>'+list(na,'#6B6460')+'</div></div>'+
     '<div style="margin-top:10px"><div class="subhead">Not recorded <span style="color:var(--grey);font-weight:400;font-size:12px">('+none.length+')</span></div><div>'+list(none,'#CCCCCC')+'</div></div>'+
     '<div class="formactions" style="margin-top:14px"><button class="ghost" onclick="closeForm()">Close</button></div></div>';
   m.scrollIntoView({behavior:'smooth',block:'start'});
@@ -1345,6 +1367,20 @@ function recordList(){ return currentChildId ? data.children.filter(c=>c.id===cu
 function healthText(c){ return [c.allergies&&('Allergies: '+c.allergies),c.dietary&&('Diet: '+c.dietary),c.medication&&('Medication: '+c.medication),c.alert].filter(Boolean).join('; '); }
 function rff(label,val){ return '<div class="rff">'+(label?'<span class="rfl">'+esc(label)+'</span>':'')+
   '<span class="rfv'+(val?'':' empty')+'">'+(val?esc(val):'&nbsp;')+'</span></div>'; }
+// collection and parental responsibility, shown on the record form and the contract
+function collectionHTML(c){
+  return rff('Parental responsibility held by', c.parentalresp)+
+    rff('Usually brought and collected by', c.broughtby)+
+    rff('Others authorised to collect', c.authcollect)+
+    rff('Collection password', c.collectpw)+
+    rff('Court orders or restrictions on contact', c.courtorders||'None recorded');
+}
+function collectionWord(c){
+  return wrf2('Parental responsibility', c.parentalresp, 'Collection password', c.collectpw)+
+    wrfFull('Usually brought and collected by', c.broughtby)+
+    wrfFull('Others authorised to collect', c.authcollect)+
+    wrfFull('Court orders or restrictions on contact', c.courtorders||'None recorded');
+}
 function recordCarer(c,n){
   const name=[c['c'+n+'name'], c['c'+n+'label']&&'('+c['c'+n+'label']+')'].filter(Boolean).join(' ');
   return '<div class="rf2">'+rff('Name',name)+rff('Place of work',c['c'+n+'work'])+
@@ -1374,6 +1410,7 @@ function recordFormHTML(c){
   h+='<h3 class="rfsec">Emergency contacts (other than parent / guardian / carer)</h3><div class="rf2">'+
      rff('Contact name',[c.ec1name,c.ec1rel&&'('+c.ec1rel+')'].filter(Boolean).join(' '))+rff('Contact number',c.ec1phone)+
      rff('Contact name',[c.ec2name,c.ec2rel&&'('+c.ec2rel+')'].filter(Boolean).join(' '))+rff('Contact number',c.ec2phone)+'</div>';
+  h+='<h3 class="rfsec">Collection and parental responsibility</h3>'+collectionHTML(c);
   h+='<h3 class="rfsec">Allergies / special diet / health requirements / illnesses</h3>'+rff('',healthText(c));
   h+='<h3 class="rfsec">Contracted hours</h3>'+hoursTable(c)+rff('Funding entitlement',c.funding);
   h+='<h3 class="rfsec">Fees and terms</h3>'+
@@ -1382,7 +1419,7 @@ function recordFormHTML(c){
      '<p class="rfterms" style="margin-top:8px">Your child\u2019s agreed rate is shown above and set out in full in your individual contract. Funded hours are free of charge; any wrap-around hours are listed separately on your invoice. Payment is required for all contracted sessions whether or not your child attends, except absence due to illness within our own household.</p>';
   h+='<h3 class="rfsec">Permissions and consents</h3>'+
      '<table class="htable"><tr><th>Permission</th><th style="width:70px">Given</th><th style="width:120px">Date</th></tr>'+
-       PERMISSIONS.map(function(p){ var pv=(c.perms&&c.perms[p.key])||{}; var g=pv.given==='yes'?'Yes':(pv.given==='no'?'No':'\u2013');
+       PERMISSIONS.map(function(p){ var pv=(c.perms&&c.perms[p.key])||{}; var g=pv.given==='yes'?'Yes':(pv.given==='no'?'No':(pv.given==='na'?'N/A':'\u2013'));
          return '<tr><td>'+esc(p.label)+'</td><td>'+g+'</td><td>'+(pv.date?esc(fmtDate(pv.date)):'')+'</td></tr>'; }).join('')+'</table>'+
      '<p class="rfterms" style="margin-top:6px">Please tell us of any change to the permissions above.</p>';
   h+='<div class="rfsign">I confirm that the details on this form are correct.<br><br>'+
@@ -1470,6 +1507,7 @@ function contractHTML(c){
   if(c.ec1name||c.ec2name){ h+='<h3 class="rfsec">Emergency contacts and who may collect</h3><div class="rf2">'+
      rff('Emergency contact',[c.ec1name,c.ec1rel&&'('+c.ec1rel+')',c.ec1phone].filter(Boolean).join(' '))+
      rff('Emergency contact',[c.ec2name,c.ec2rel&&'('+c.ec2rel+')',c.ec2phone].filter(Boolean).join(' '))+'</div>'; }
+  h+='<h3 class="rfsec">Parental responsibility, collection and contact</h3>'+collectionHTML(c);
   // hours
   h+='<h3 class="rfsec">Contracted days and hours</h3>'+hoursTable(c)+rff('Funding entitlement',contractFunding(c));
   // fees
@@ -1624,6 +1662,7 @@ function buildContractWordHTML(){
     h+=wsec('The parent or carer')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+wordCarerRows(c,1)+'</table>';
     if(c.ec1name||c.ec2name){ h+=wsec('Emergency contacts and who may collect')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+
       wrf2('Emergency contact',[c.ec1name,c.ec1rel&&'('+c.ec1rel+')',c.ec1phone].filter(Boolean).join(' '),'Emergency contact',[c.ec2name,c.ec2rel&&'('+c.ec2rel+')',c.ec2phone].filter(Boolean).join(' '))+'</table>'; }
+    h+=wsec('Parental responsibility, collection and contact')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+collectionWord(c)+'</table>';
     h+=wsec('Contracted days and hours')+wordHoursTable(c)+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-top:4px">'+wrfFull('Funding entitlement',contractFunding(c))+'</table>';
     var feeTh='font-family:Arial;font-size:9pt;font-weight:bold;background:#E8F1EC;color:#1A7A4A;border:1pt solid #cccccc;padding:4px 8px;text-align:left';
     h+=wsec('Fees')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse"><tr><td style="'+feeTh+'" width="55%">Service</td><td style="'+feeTh+'">Rate</td></tr>'+
@@ -1683,6 +1722,7 @@ function wordRecordForm(c){
   h+=wSec('Emergency contacts (other than parent / guardian / carer)')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+
      wrf2('Contact name',[c.ec1name,c.ec1rel&&'('+c.ec1rel+')'].filter(Boolean).join(' '),'Contact number',c.ec1phone)+
      wrf2('Contact name',[c.ec2name,c.ec2rel&&'('+c.ec2rel+')'].filter(Boolean).join(' '),'Contact number',c.ec2phone)+'</table>';
+  h+=wSec('Collection and parental responsibility')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+collectionWord(c)+'</table>';
   h+=wSec('Allergies / special diet / health requirements / illnesses')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+wrfFull('',healthText(c))+'</table>';
   h+=wSec('Contracted hours')+wordHoursTable(c)+
      '<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-top:4px">'+wrfFull('Funding entitlement',c.funding)+'</table>';
@@ -1696,7 +1736,7 @@ function wordRecordForm(c){
   var pTd='font-family:Arial;font-size:9.5pt;border:1pt solid #cccccc;padding:4px 8px;vertical-align:top';
   h+=wSec('Permissions and consents')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">'+
      '<tr><td style="'+pTh+'">Permission</td><td style="'+pTh+'" width="70">Given</td><td style="'+pTh+'" width="120">Date</td></tr>'+
-     PERMISSIONS.map(function(p){ var pv=(c.perms&&c.perms[p.key])||{}; var g=pv.given==='yes'?'Yes':(pv.given==='no'?'No':'–');
+     PERMISSIONS.map(function(p){ var pv=(c.perms&&c.perms[p.key])||{}; var g=pv.given==='yes'?'Yes':(pv.given==='no'?'No':(pv.given==='na'?'N/A':'–'));
        return '<tr><td style="'+pTd+'">'+esc(p.label)+'</td><td style="'+pTd+'">'+g+'</td><td style="'+pTd+'">'+(pv.date?esc(fmtDate(pv.date)):'')+'</td></tr>'; }).join('')+'</table>';
   h+='<div style="font-family:Arial;font-size:10pt;background:#FBF3DC;border-left:3pt solid #D4A017;padding:8px 10px;margin-top:12px">I confirm that the details on this form are correct.<br><br>'+
      'Signed ............................................................. &#160; Date ...................... &#160; (parent / carer)</div>';
@@ -1798,7 +1838,7 @@ function buildFireBagDocHTML(){
 /* ---------- weekly schedule of all children ---------- */
 function dayTimes(c,day){ var a=(c.attendance||[]).find(function(x){return x.day===day;}); if(!a) return '';
   var t1=block1(a), t2=block2(a); return [t1, t2].filter(Boolean).join(' & '); }
-function scheduleGroups(){ return [['ayr','All year round'],['term','Term time only'],['holidays','Holidays only'],['','Basis not set']]; }
+function termTag(c){ return (c.basis||'')==='term' ? ' <span style="font-weight:400;font-size:11px;color:var(--grey)">(term only)</span>' : ''; }
 function buildScheduleDocHTML(){
   var rev=document.getElementById('reviewedInput').value;
   var wkdays=['Monday','Tuesday','Wednesday','Thursday','Friday'];
@@ -1807,15 +1847,21 @@ function buildScheduleDocHTML(){
     '<div class="docsub">Who is booked in each day, with times</div>'+
     '<p class="reviewed">'+esc(fmtDate(rev||todayISO()))+' &nbsp;·&nbsp; Confidential</p>';
   var kids=(data.children||[]).filter(function(c){return onRoll(c);});
+  var normal=kids.filter(function(c){return !childIsHoliday(c);});
+  var hol=kids.filter(childIsHoliday);
+  function tableFor(rows){ return '<table class="htable"><thead><tr><th style="width:150px">Child</th><th>Age</th>'+wkdays.map(function(d){return '<th>'+d.slice(0,3)+'</th>';}).join('')+'</tr></thead><tbody>'+
+      rows.map(function(c){ return '<tr><td><b>'+esc(fullName(c))+'</b>'+termTag(c)+'</td><td>'+esc(ageShort(c))+'</td>'+
+        wkdays.map(function(d){ var t=dayTimes(c,d); return '<td'+(t?'':' style="background:#f6f5f2"')+'>'+(t||'')+'</td>'; }).join('')+'</tr>'; }).join('')+'</tbody></table>'; }
   if(!kids.length){ h+='<p class="anone">No children to show.</p>'; }
   else {
-    scheduleGroups().forEach(function(g){ var rows=kids.filter(function(c){return (c.basis||'')===g[0];}).sort(function(a,b){return fullName(a).localeCompare(fullName(b));}); if(!rows.length) return;
-      h+='<div class="bandhead" style="background:#1A7A4A">'+g[1]+' ('+rows.length+')</div>'+
-        '<table class="htable"><thead><tr><th style="width:150px">Child</th><th>Age</th>'+wkdays.map(function(d){return '<th>'+d.slice(0,3)+'</th>';}).join('')+'</tr></thead><tbody>'+
-        rows.map(function(c){ return '<tr><td><b>'+esc(fullName(c))+'</b></td><td>'+esc(ageShort(c))+'</td>'+
-          wkdays.map(function(d){ var t=dayTimes(c,d); return '<td'+(t?'':' style="background:#f6f5f2"')+'>'+(t||'')+'</td>'; }).join('')+'</tr>'; }).join('')+
-        '</tbody></table>';
-    });
+    h+=bandKeyHTML(kids);
+    bandGroups(normal).forEach(function(grp){
+      h+='<div class="bandhead" style="background:'+grp.color+'">'+grp.name+' ('+grp.kids.length+')</div>'+tableFor(grp.kids); });
+    if(hol.length){
+      h+='<div class="holdiv">Holiday only children &nbsp;·&nbsp; still count in ratio</div>';
+      bandGroups(hol).forEach(function(grp){
+        h+='<div class="bandhead ol" style="color:'+grp.color+'">'+grp.name+' ('+grp.kids.length+')</div>'+tableFor(grp.kids); });
+    }
     // staff schedule
     if((data.staff||[]).length){
       h+='<div class="bandhead" style="background:#6B6460">Staff</div>'+
@@ -1838,11 +1884,15 @@ function buildScheduleWordHTML(){
     '<div style="font-family:Georgia,serif;font-style:italic;color:#6B6460;font-size:11pt;border-bottom:2pt solid #D4A017;padding-bottom:6px">Who is booked in each day, with times</div>'+
     '<div style="font-family:Arial;font-size:9pt;color:#6B6460;margin:6px 0 12px">'+esc(fmtDate(rev||todayISO()))+' &#183; Confidential</div>';
   var kids=(data.children||[]).filter(function(c){return onRoll(c);});
-  function bandRow(label,color){ return '<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:12px 0 6px"><tr><td bgcolor="'+color+'" style="background:'+color+';font-family:Georgia,serif;font-size:12pt;font-weight:bold;color:#fff;padding:4px 10px">'+esc(label)+'</td></tr></table>'; }
-  scheduleGroups().forEach(function(g){ var rows=kids.filter(function(c){return (c.basis||'')===g[0];}).sort(function(a,b){return fullName(a).localeCompare(fullName(b));}); if(!rows.length) return;
-    h+=bandRow(g[1]+' ('+rows.length+')','#1A7A4A')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse"><tr><td style="'+th+'">Child</td><td style="'+th+'">Age</td>'+wkdays.map(function(d){return '<td style="'+th+'">'+d.slice(0,3)+'</td>';}).join('')+'</tr>'+
-      rows.map(function(c){ return '<tr><td style="'+td+';font-weight:bold">'+esc(fullName(c))+'</td><td style="'+td+'">'+esc(ageShort(c))+'</td>'+wkdays.map(function(d){return '<td style="'+td+'">'+esc(dayTimes(c,d))+'</td>';}).join('')+'</tr>'; }).join('')+'</table>';
-  });
+  var normal=kids.filter(function(c){return !childIsHoliday(c);});
+  var hol=kids.filter(childIsHoliday);
+  function bandRow(label,color,outline){ if(outline) return '<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:12px 0 6px"><tr><td style="background:#ffffff;border:1.5pt solid '+color+';font-family:Georgia,serif;font-size:12pt;font-weight:bold;color:'+color+';padding:4px 10px">'+esc(label)+'</td></tr></table>';
+    return '<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:12px 0 6px"><tr><td bgcolor="'+color+'" style="background:'+color+';font-family:Georgia,serif;font-size:12pt;font-weight:bold;color:#fff;padding:4px 10px">'+esc(label)+'</td></tr></table>'; }
+  function wsTable(rows){ return '<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse"><tr><td style="'+th+'">Child</td><td style="'+th+'">Age</td>'+wkdays.map(function(d){return '<td style="'+th+'">'+d.slice(0,3)+'</td>';}).join('')+'</tr>'+
+      rows.map(function(c){ return '<tr><td style="'+td+';font-weight:bold">'+esc(fullName(c))+((c.basis||'')==='term'?' (term only)':'')+'</td><td style="'+td+'">'+esc(ageShort(c))+'</td>'+wkdays.map(function(d){return '<td style="'+td+'">'+esc(dayTimes(c,d))+'</td>';}).join('')+'</tr>'; }).join('')+'</table>'; }
+  h+=wBandKey(kids);
+  bandGroups(normal).forEach(function(grp){ h+=bandRow(grp.name+' ('+grp.kids.length+')',grp.color)+wsTable(grp.kids); });
+  if(hol.length){ h+=wHolDiv(); bandGroups(hol).forEach(function(grp){ h+=bandRow(grp.name+' ('+grp.kids.length+')',grp.color,true)+wsTable(grp.kids); }); }
   if((data.staff||[]).length){ h+=bandRow('Staff','#6B6460')+'<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse"><tr><td style="'+th+'">Staff</td><td style="'+th+'">In ratio</td>'+wkdays.map(function(d){return '<td style="'+th+'">'+d.slice(0,3)+'</td>';}).join('')+'</tr>'+
     (data.staff||[]).map(function(s){ return '<tr><td style="'+td+';font-weight:bold">'+esc(s.name||'')+'</td><td style="'+td+'">'+(s.inRatio===false?'no':'yes')+'</td>'+wkdays.map(function(d){ var a=(s.hours||[]).find(function(x){return x.day===d;}); return '<td style="'+td+'">'+esc(a?[block1(a),block2(a)].filter(Boolean).join(' & '):'')+'</td>'; }).join('')+'</tr>'; }).join('')+'</table>'; }
   h+='<div style="font-family:Arial;font-size:8.5pt;color:#6B6460;border-top:1pt solid #cccccc;margin-top:14px;padding-top:6px">Little Puddings, Lincoln LN6 0UL &#160;&#183;&#160; Confidential, contains personal data</div>';
@@ -1879,11 +1929,49 @@ function childHTML(c){
   if(c.school) h+='<div class="row"><span class="lbl">School:</span><span>'+esc(c.school)+'</span><span class="ph">'+esc(c.schoolphone||'')+'</span></div>';
   const banner=allergyBanner(c);
   if(banner) h+='<div class="alert">'+esc(banner.toUpperCase())+'</div>';
-  var ps=permSummary(c);
-  if(ps) h+='<div class="permline"><span class="lbl">Permissions:</span><span>'+ps+'</span></div>';
   var rf=riskFlags(c);
   if(rf.length) h+='<div class="permline"><span class="lbl" style="color:var(--burg)">Safety:</span><span>'+rf.map(function(f){return esc(f.label)+(f.detail?' ('+esc(f.detail)+')':'');}).join('; ')+'</span></div>';
   h+='</div>'; return h;
+}
+// deputy views: group children by age band (holiday-only at the end), render each with a per-child builder
+function deputyGrouped(all, renderChild){
+  var normal=all.filter(function(c){ return !childIsHoliday(c); });
+  var hol=all.filter(childIsHoliday);
+  var h='';
+  bandGroups(normal).forEach(function(grp){ h+='<div class="bandhead" style="background:'+grp.color+'">'+grp.name+' ('+grp.kids.length+')</div>'+grp.kids.map(function(c){return renderChild(c,grp.color);}).join(''); });
+  if(hol.length){ h+='<div class="holdiv">Holiday only children &nbsp;·&nbsp; still count in ratio</div>';
+    bandGroups(hol).forEach(function(grp){ h+='<div class="bandhead ol" style="color:'+grp.color+'">'+grp.name+' ('+grp.kids.length+')</div>'+grp.kids.map(function(c){return renderChild(c,grp.color);}).join(''); }); }
+  return h;
+}
+function buildDeputyPermsHTML(){
+  var all=(data.children||[]).filter(onRoll);
+  var h='<div class="brand">Little Puddings</div><h1 class="title">Permissions</h1>'+
+    '<div class="docsub">What each family has agreed to. Yes in green, No in red.</div>'+
+    '<p class="reviewed">Confidential &nbsp;·&nbsp; for staff on the premises</p>'+bandKeyHTML(all);
+  if(!all.length){ h+='<p class="anone">No children to show.</p>'; return h; }
+  h+=deputyGrouped(all, function(c,col){ var ps=permSummary(c);
+    return '<div class="child" style="border-left-color:'+col+'"><div class="nameline"><span class="cname">'+esc(fullName(c))+'</span><span class="dob">'+esc(ageShort(c))+'</span></div>'+
+      (ps?'<div class="permline">'+ps+'</div>':'<div class="permline"><span class="anone">None recorded</span></div>')+'</div>'; });
+  h+='<div class="docfoot"><span>Little Puddings, Lincoln LN6 0UL</span><span>Confidential, contains personal data</span></div>';
+  return h;
+}
+function buildDeputyMedicalHTML(){
+  var all=(data.children||[]).filter(onRoll);
+  var h='<div class="brand">Little Puddings</div><h1 class="title">Medical and allergies</h1>'+
+    '<div class="docsub">Allergies, dietary needs, medication and medical alerts</div>'+
+    '<p class="reviewed">Confidential &nbsp;·&nbsp; for staff on the premises</p>'+bandKeyHTML(all);
+  if(!all.length){ h+='<p class="anone">No children to show.</p>'; return h; }
+  h+=deputyGrouped(all, function(c,col){
+    var h2='<div class="child" style="border-left-color:'+col+'"><div class="nameline"><span class="cname">'+esc(fullName(c))+'</span><span class="dob">'+esc(ageShort(c))+'</span></div>';
+    if(c.allergies) h2+='<div class="alert">ALLERGY: '+esc(c.allergies.toUpperCase())+'</div>';
+    var rows='';
+    if(c.alert) rows+='<div class="row"><span class="lbl">Medical:</span><span>'+esc(c.alert)+'</span><span class="ph"></span></div>';
+    if(c.medication) rows+='<div class="row"><span class="lbl">Medication:</span><span>'+esc(c.medication)+'</span><span class="ph"></span></div>';
+    if(c.dietary) rows+='<div class="row"><span class="lbl">Diet:</span><span>'+esc(c.dietary)+'</span><span class="ph"></span></div>';
+    if(!c.allergies && !rows) rows='<div class="row"><span class="anone">No allergies or medication recorded</span></div>';
+    return h2+rows+'</div>'; });
+  h+='<div class="docfoot"><span>Little Puddings, Lincoln LN6 0UL</span><span>Confidential, contains personal data</span></div>';
+  return h;
 }
 // deputy-relevant permissions: photos, library, toothbrushing, sole care. Yes in green, No in burgundy.
 var DEPUTY_PERMS=['photo_routine','photo_tapestry','photo_display','photo_coursework','photo_share_tapestry','photo_share_whatsapp','library','toothbrushing','solecare'];
@@ -1913,26 +2001,39 @@ function staffHTML(s){
   if(s.childrenNote) h+='<div class="row"><span class="lbl">Children:</span><span>'+esc(s.childrenNote)+'</span><span class="ph"></span></div>';
   h+='</div>'; return h;
 }
-// emergency document groups into three: Under 5s / Under 8s / Over 8s (babies fold into Under 5s)
-const DOCBANDS = [ {name:'Under 5s',color:'#1A7A4A'}, {name:'Under 8s',color:'#D17A22'}, {name:'Over 8s',color:'#2E6DA4'} ];
-function docBandOf(c){ var b=bandOf(c); return b==='Under 1s' ? 'Under 5s' : b; }
-function groupChildren(){
-  const g={}; DOCBANDS.forEach(b=>g[b.name]=[]);
-  data.children.forEach(c=>g[docBandOf(c)].push(c));
-  DOCBANDS.forEach(b=>g[b.name].sort((x,y)=>new Date(y.dob||0)-new Date(x.dob||0)));
-  return g;
-}
+// age-band colour grouping, holiday-only children set apart at the end (they still count in ratio)
+var HOLIDAY_COLOR='#6C4A8F';
+function childIsHoliday(c){ return (c.basis||'')==='holidays'; }
+// group a list into the four age bands, youngest first within each, dropping empty bands
+function bandGroups(list){ var g=BANDS.map(function(b){ return {name:b.name, color:b.color, kids:[]}; });
+  (list||[]).forEach(function(c){ var bn=bandOf(c); var slot=g.find(function(x){return x.name===bn;}); if(slot) slot.kids.push(c); });
+  g.forEach(function(x){ x.kids.sort(function(a,b){ return new Date(b.dob||0)-new Date(a.dob||0); }); });
+  return g.filter(function(x){ return x.kids.length; }); }
+// colour key with a running count per age band, for the top of a document
+function bandKeyHTML(list){ var counts={}; (list||[]).forEach(function(c){ var b=bandOf(c); counts[b]=(counts[b]||0)+1; });
+  var shown=BANDS.filter(function(b){ return counts[b.name]; });
+  if(!shown.length) return '';
+  return '<div class="bandkey">'+shown.map(function(b){ return '<span><i style="background:'+b.color+'"></i>'+b.name+' ('+counts[b.name]+')</span>'; }).join('')+'</div>'; }
 function buildDocHTML(){
-  const grouped=groupChildren();
   const rev=document.getElementById('reviewedInput').value;
+  var all=(data.children||[]);
+  var normal=all.filter(function(c){ return !childIsHoliday(c); });
+  var hol=all.filter(childIsHoliday);
   let h='<div class="brand">Little Puddings</div>'+
         '<h1 class="title">In case of Emergency</h1>'+
         '<div class="docsub">Details of next of kin for minded children and staff</div>'+
-        '<p class="reviewed">Reviewed: '+(rev?esc(fmtDate(rev)):'____________')+' &nbsp;·&nbsp; Confidential</p>';
-  DOCBANDS.forEach(b=>{ const list=grouped[b.name]; if(!list.length) return;
-    h+='<div class="bandhead" style="background:'+b.color+'">'+b.name+'</div>';
-    list.forEach(c=>h+=childHTML(c)); });
-  if(data.children.length===0) h+='<p style="color:var(--grey);font-style:italic">No children added yet.</p>';
+        '<p class="reviewed">Reviewed: '+(rev?esc(fmtDate(rev)):'____________')+' &nbsp;·&nbsp; Confidential</p>'+
+        bandKeyHTML(all);
+  bandGroups(normal).forEach(function(grp){
+    h+='<div class="bandhead" style="background:'+grp.color+'">'+grp.name+' ('+grp.kids.length+')</div>';
+    grp.kids.forEach(function(c){ h+=childHTML(c); }); });
+  if(hol.length){
+    h+='<div class="holdiv">Holiday only children &nbsp;·&nbsp; still count in ratio</div>';
+    bandGroups(hol).forEach(function(grp){
+      h+='<div class="bandhead ol" style="color:'+grp.color+'">'+grp.name+' ('+grp.kids.length+')</div>';
+      grp.kids.forEach(function(c){ h+=childHTML(c); }); });
+  }
+  if(all.length===0) h+='<p style="color:var(--grey);font-style:italic">No children added yet.</p>';
   if(data.staff.length){
     h+='<div class="bandhead" style="background:#6B6460">Staff</div>';
     data.staff.forEach(s=>h+=staffHTML(s));
@@ -1950,6 +2051,8 @@ function renderDoc(){ document.getElementById('document').innerHTML =
   currentDoc==='contract' ? buildContractDocHTML() :
   currentDoc==='review' ? buildReviewDocHTML() :
   currentDoc==='risk' ? buildRiskDocHTML() :
+  currentDoc==='perms' ? buildDeputyPermsHTML() :
+  currentDoc==='medical' ? buildDeputyMedicalHTML() :
   currentDoc==='record' ? buildRecordDocHTML() : buildDocHTML(); }
 
 function allergyChildren(){
@@ -2119,10 +2222,22 @@ function wCarer(label,name,mobile,work,workphone){
   let h=''; if(name||mobile) h+=wRow((label||'')+':',name,mobile);
   if(work||workphone) h+=wRow('Work:',work,workphone); return h;
 }
-function wBand(name,color){
+function wBand(name,color,outline){
+  if(outline) return '<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:16px 0 8px 0">'+
+    '<tr><td style="background:#ffffff;border:1.5pt solid '+color+';font-family:Georgia,serif;font-size:13pt;font-weight:bold;color:'+color+';padding:4px 10px">'+esc(name)+'</td></tr></table>';
   return '<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:16px 0 8px 0">'+
     '<tr><td bgcolor="'+color+'" style="background:'+color+';font-family:Georgia,serif;font-size:13pt;font-weight:bold;color:#ffffff;padding:4px 10px">'+esc(name)+'</td></tr></table>';
 }
+function wHolDiv(){
+  return '<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:22px 0 8px 0">'+
+    '<tr><td bgcolor="'+HOLIDAY_COLOR+'" style="background:'+HOLIDAY_COLOR+';font-family:Georgia,serif;font-size:12pt;font-weight:bold;color:#ffffff;padding:4px 10px">Holiday only children &#183; still count in ratio</td></tr></table>';
+}
+function wBandKey(list){ var counts={}; (list||[]).forEach(function(c){ var b=bandOf(c); counts[b]=(counts[b]||0)+1; });
+  var shown=BANDS.filter(function(b){ return counts[b.name]; }); if(!shown.length) return '';
+  return '<table cellspacing="0" cellpadding="0" style="margin:0 0 12px 0"><tr>'+shown.map(function(b){
+    return '<td style="padding:0 16px 0 0"><table cellspacing="0" cellpadding="0" style="display:inline-table"><tr>'+
+      '<td width="12" bgcolor="'+b.color+'" style="background:'+b.color+';width:12px">&#160;</td>'+
+      '<td style="padding-left:5px;font-family:Arial;font-size:9pt;color:#2B2A28">'+esc(b.name)+' ('+counts[b.name]+')</td></tr></table></td>'; }).join('')+'</tr></table>'; }
 function wChild(c){
   const col=bandColor(bandOf(c));
   let h='<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:0 0 4px 0;border-left:3pt solid '+col+'">';
@@ -2138,11 +2253,9 @@ function wChild(c){
   const banner=allergyBanner(c);
   if(banner) h+='<table width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 4px 0"><tr>'+
     '<td bgcolor="#F4DEDA" align="center" style="background:#F4DEDA;font-family:Arial;font-size:9.5pt;font-weight:bold;color:#A13A2A;padding:4px">'+esc(banner.toUpperCase())+'</td></tr></table>';
-  var ps=permSummaryPlain(c);
-  if(ps) h+='<table width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 3px 0"><tr><td style="font-family:Arial;font-size:8.5pt;color:#6B6460;padding:2px 4px"><b>Permissions:</b> '+esc(ps)+'</td></tr></table>';
   var rf=riskFlags(c);
   if(rf.length) h+='<table width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 10px 0"><tr><td style="font-family:Arial;font-size:8.5pt;color:#A13A2A;padding:2px 4px"><b>Safety:</b> '+esc(rf.map(function(f){return f.label+(f.detail?' ('+f.detail+')':'');}).join('; '))+'</td></tr></table>';
-  else if(!ps) h+='<div style="font-size:6pt">&#160;</div>';
+  else h+='<div style="font-size:6pt">&#160;</div>';
   return h;
 }
 function wStaff(s){
@@ -2157,13 +2270,18 @@ function wStaff(s){
   h+='</table>'; return h;
 }
 function buildWordHTML(){
-  const g=groupChildren(); const rev=document.getElementById('reviewedInput').value;
+  const rev=document.getElementById('reviewedInput').value;
+  var all=(data.children||[]);
+  var normal=all.filter(function(c){ return !childIsHoliday(c); });
+  var hol=all.filter(childIsHoliday);
   let h='<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:11pt">Little Puddings</div>'+
         '<div style="font-family:Georgia,serif;color:#1A7A4A;font-weight:bold;font-size:22pt;margin:2px 0">In case of Emergency</div>'+
         '<div style="font-family:Georgia,serif;font-style:italic;color:#6B6460;font-size:11pt;border-bottom:2pt solid #D4A017;padding-bottom:6px">Details of next of kin for minded children and staff</div>'+
-        '<div style="font-family:Arial;font-size:9pt;color:#6B6460;margin:6px 0 14px 0">Reviewed: '+(rev?esc(fmtDate(rev)):'____________')+' &#183; Confidential</div>';
-  DOCBANDS.forEach(b=>{ const list=g[b.name]; if(!list.length) return; h+=wBand(b.name,b.color); list.forEach(c=>h+=wChild(c)); });
-  if(!data.children.length) h+='<p style="font-family:Arial;color:#6B6460;font-style:italic">No children added yet.</p>';
+        '<div style="font-family:Arial;font-size:9pt;color:#6B6460;margin:6px 0 10px 0">Reviewed: '+(rev?esc(fmtDate(rev)):'____________')+' &#183; Confidential</div>'+
+        wBandKey(all);
+  bandGroups(normal).forEach(function(grp){ h+=wBand(grp.name+' ('+grp.kids.length+')',grp.color); grp.kids.forEach(function(c){ h+=wChild(c); }); });
+  if(hol.length){ h+=wHolDiv(); bandGroups(hol).forEach(function(grp){ h+=wBand(grp.name+' ('+grp.kids.length+')',grp.color,true); grp.kids.forEach(function(c){ h+=wChild(c); }); }); }
+  if(!all.length) h+='<p style="font-family:Arial;color:#6B6460;font-style:italic">No children added yet.</p>';
   if(data.staff.length){ h+=wBand('Staff','#6B6460'); data.staff.forEach(s=>h+=wStaff(s)); }
   h+='<div style="font-family:Arial;font-size:8.5pt;color:#6B6460;border-top:1pt solid #cccccc;margin-top:18px;padding-top:6px">Little Puddings, Lincoln LN6 0UL &#160;&#183;&#160; Confidential, contains personal data</div>';
   return h;
@@ -2455,7 +2573,8 @@ function pinHash(s){ var h=5381; for(var i=0;i<s.length;i++){ h=((h*33)+s.charCo
 function currentPinHash(role){ var s=data.settings||{};
   if(role==='deputy') return s.deputyPinHash || DEFAULT_DEPUTY_HASH;
   return s.pinHash || DEFAULT_MANAGER_HASH; }
-function lockApp(){ unlocked=false; emergencyOnly=false;
+function lockApp(){ unlocked=false; emergencyOnly=false; depIdleStop();
+  var dt=document.getElementById('deputyTabs'); if(dt) dt.style.display='none';
   document.getElementById('preview').style.display='none';
   document.getElementById('manager').style.display='none';
   var g=document.getElementById('gate'); g.style.display='flex';
@@ -2463,6 +2582,17 @@ function lockApp(){ unlocked=false; emergencyOnly=false;
   var err=document.getElementById('gateErr'); if(err) err.textContent='';
   window.scrollTo(0,0);
 }
+// deputy view auto-locks after a minute of inactivity
+var depIdleTimer=null, DEP_IDLE_MS=60000, depIdleBound=false;
+function depIdleReset(){ if(!emergencyOnly) return; clearTimeout(depIdleTimer);
+  depIdleTimer=setTimeout(function(){ if(emergencyOnly) lockApp(); }, DEP_IDLE_MS); }
+function depIdleStart(){ if(!depIdleBound){ depIdleBound=true;
+    ['pointerdown','keydown','touchstart','scroll','click'].forEach(function(ev){ document.addEventListener(ev, depIdleReset, {passive:true}); }); }
+  depIdleReset(); }
+function depIdleStop(){ clearTimeout(depIdleTimer); }
+function deputyTab(doc){ currentDoc=doc; currentChildId=null; renderDoc();
+  ['emergency','perms','medical'].forEach(function(d){ var b=document.getElementById('depTab_'+d); if(b) b.className=(d===doc?'primary':'ghost'); });
+  window.scrollTo(0,0); depIdleReset(); }
 function unlockManager(){ unlocked=true; emergencyOnly=false;
   document.getElementById('gate').style.display='none'; MAINVIEW='landing'; showManager(); renderMain(); }
 function tryUnlock(role){
@@ -2486,12 +2616,14 @@ function openEmergencyPublic(){ emergencyOnly=true; unlocked=false;
   currentDoc='emergency'; currentChildId=null;
   document.getElementById('manager').style.display='none';
   document.getElementById('preview').style.display='block';
-  window.scrollTo(0,0); renderDoc(); updatePreviewBar(); }
+  deputyTab('emergency');
+  updatePreviewBar(); depIdleStart(); }
 function previewBack(){ if(emergencyOnly) lockApp(); else showManager(); }
 function updatePreviewBar(){
   var ctrls=document.getElementById('previewMgrCtrls');
   var back=document.getElementById('previewBackBtn');
   if(ctrls) ctrls.style.display = emergencyOnly ? 'none' : 'flex';
+  var dt=document.getElementById('deputyTabs'); if(dt) dt.style.display = emergencyOnly ? 'block' : 'none';
   if(back) back.textContent = emergencyOnly ? '\u2039 Lock' : '\u2039 Back to data';
   var wb=document.getElementById('wordBtn'), rw=document.getElementById('reviewedWrap');
   var isFire = currentDoc==='firebag';
